@@ -2271,7 +2271,7 @@ void QgisApp::askUserForGDALSublayers( QgsRasterLayer *layer )
   QStringList sublayers = layer->subLayers();
   QgsDebugMsg( "sublayers:\n  " + sublayers.join( "  \n" ) + "\n" );
 
-  // if promptLayers=Load all, load all sublayers without prompting  
+  // if promptLayers=Load all, load all sublayers without prompting
   QSettings settings;
   if ( settings.value( "/qgis/promptForRasterSublayers", 1 ).toInt() == 3 )
   {
@@ -2307,8 +2307,8 @@ bool QgisApp::shouldAskUserForGDALSublayers( QgsRasterLayer *layer )
   QSettings settings;
   int promptLayers = settings.value( "/qgis/promptForRasterSublayers", 1 ).toInt();
 
-  // return true if promptLayers=Always or if promptLayers!=Never and there are no bands    
-  return promptLayers == 0 || ( promptLayers !=2 && layer->bandCount() == 0 );
+  // return true if promptLayers=Always or if promptLayers!=Never and there are no bands
+  return promptLayers == 0 || ( promptLayers != 2 && layer->bandCount() == 0 );
 }
 
 // This method will load with GDAL the layers in parameter.
@@ -2319,18 +2319,18 @@ void QgisApp::loadGDALSublayers( QString uri, QStringList list )
   QgsRasterLayer *subLayer = NULL;
 
   //add layers in reverse order so they appear in the right order in the layer dock
-  for( int i=list.size()-1; i >= 0 ; i-- )
+  for ( int i = list.size() - 1; i >= 0 ; i-- )
   {
     path = list[i];
     // shorten name by replacing complete path with filename
     name = path;
     name.replace( uri, QFileInfo( uri ).completeBaseName() );
     subLayer = new QgsRasterLayer( path, name );
-    if ( subLayer ) 
+    if ( subLayer )
     {
       if ( subLayer->isValid() )
         addRasterLayer( subLayer );
-      else 
+      else
         delete subLayer;
     }
   }

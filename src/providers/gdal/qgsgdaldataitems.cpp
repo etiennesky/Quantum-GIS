@@ -79,11 +79,11 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
       QgsDebugMsg( "extensions: " + extensions.join( " " ) );
       QgsDebugMsg( "wildcards: " + wildcards.join( " " ) );
     }
-    // skip *.aux.xml files (GDAL auxilary metadata files) 
+    // skip *.aux.xml files (GDAL auxilary metadata files)
     // unless that extension is in the list (*.xml might be though)
-    if ( thePath.right(8) == ".aux.xml" && 
+    if ( thePath.right( 8 ) == ".aux.xml" &&
          extensions.indexOf( "aux.xml" ) < 0 )
-        return 0;
+      return 0;
 
     if ( extensions.indexOf( info.suffix().toLower() ) < 0 )
     {
@@ -114,7 +114,7 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
     QgsDebugMsg( "GdalDataset opened " + thePath );
 
     //extract basename with extension
-    QString name = info.completeBaseName()+"."+QFileInfo( thePath ).suffix();
+    QString name = info.completeBaseName() + "." + QFileInfo( thePath ).suffix();
     QString uri = thePath;
 
     QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, uri );
@@ -134,7 +134,7 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
 
           QString name = sublayers[i];
           //replace full path with basename+extension
-          name.replace( thePath, QFileInfo( thePath ).completeBaseName()+"."+QFileInfo( thePath ).suffix() );
+          name.replace( thePath, QFileInfo( thePath ).completeBaseName() + "." + QFileInfo( thePath ).suffix() );
           childItem = new QgsGdalLayerItem( item, name, thePath + "/" + name, sublayers[i] );
           if ( childItem )
             item->addChildItem( childItem );

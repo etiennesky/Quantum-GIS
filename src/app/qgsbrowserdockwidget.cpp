@@ -67,11 +67,11 @@ QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
   setWindowTitle( tr( "Browser" ) );
 
   mBrowserView = new QgsBrowserTreeView( this );
- 
+
   QToolButton* refreshButton = new QToolButton( this );
   refreshButton->setIcon( QgisApp::instance()->getThemeIcon( "mActionDraw.png" ) );
   // remove this to save space
-  refreshButton->setToolButtonStyle( Qt::ToolButtonTextBesideIcon);
+  refreshButton->setToolButtonStyle( Qt::ToolButtonTextBesideIcon );
   refreshButton->setText( tr( "Refresh" ) );
   refreshButton->setToolTip( tr( "Refresh" ) );
   refreshButton->setAutoRaise( true );
@@ -80,7 +80,7 @@ QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
   QToolButton* addLayersButton = new QToolButton( this );
   addLayersButton->setIcon( QgisApp::instance()->getThemeIcon( "mActionAddLayer.png" ) );
   // remove this to save space
-  addLayersButton->setToolButtonStyle( Qt::ToolButtonTextBesideIcon);
+  addLayersButton->setToolButtonStyle( Qt::ToolButtonTextBesideIcon );
   addLayersButton->setText( tr( "Add Selection" ) );
   addLayersButton->setToolTip( tr( "Add Selected Layers" ) );
   addLayersButton->setAutoRaise( true );
@@ -128,7 +128,7 @@ void QgsBrowserDockWidget::showEvent( QShowEvent * e )
 
 
 void QgsBrowserDockWidget::itemClicked( const QModelIndex& index )
-{ 
+{
   QgsDataItem *dataItem = mModel->dataItem( index );
 
   if ( dataItem != NULL && dataItem->type() == QgsDataItem::Layer )
@@ -321,14 +321,14 @@ void QgsBrowserDockWidget::addSelectedLayers()
   qSort( list );
 
   // add items in reverse order so they are in correct order in the layers dock
-  for ( int i=list.size()-1; i>=0; i-- )
+  for ( int i = list.size() - 1; i >= 0; i-- )
   {
     QModelIndex index = list[i];
     QgsDataItem *dataItem = mModel->dataItem( index );
     if ( dataItem && dataItem->type() == QgsDataItem::Layer )
     {
       QgsLayerItem *layerItem = qobject_cast<QgsLayerItem*>( dataItem );
-      if ( layerItem ) 
+      if ( layerItem )
         addLayer( layerItem );
     }
   }

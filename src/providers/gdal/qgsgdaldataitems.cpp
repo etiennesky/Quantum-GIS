@@ -3,17 +3,25 @@
 #include "qgslogger.h"
 
 #include <QFileInfo>
+#include <QApplication>
 
 // defined in qgsgdalprovider.cpp
 void buildSupportedRasterFileFilterAndExtensions( QString & theFileFiltersString, QStringList & theExtensions, QStringList & theWildcards );
 
 
 QgsGdalLayerItem::QgsGdalLayerItem( QgsDataItem* parent,
-                                    QString name, QString path, QString uri )
+                                    QString name, QString path, QString uri,
+                                    QStringList *list )
     : QgsLayerItem( parent, name, path, uri, QgsLayerItem::Raster, "gdal" )
 {
   mToolTip = uri;
-  mPopulated = true; // children are not expected
+  if ( list && list->size() > 0 )
+  {
+    sublayers = *list;
+    mPopulated = false;
+  }
+  else
+    mPopulated = true;
 }
 
 QgsGdalLayerItem::~QgsGdalLayerItem()
@@ -22,7 +30,7 @@ QgsGdalLayerItem::~QgsGdalLayerItem()
 
 QgsLayerItem::Capability QgsGdalLayerItem::capabilities()
 {
-  // Check if data sour can be opened for update
+  // Check if data source can be opened for update
   QgsDebugMsg( "mPath = " + mPath );
   GDALAllRegister();
   GDALDatasetH hDS = GDALOpen( TO8F( mPath ), GA_Update );
@@ -52,6 +60,34 @@ bool QgsGdalLayerItem::setCrs( QgsCoordinateReferenceSystem crs )
   return true;
 }
 
+QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
+{
+  QgsDebugMsg( "Entered, path=" + path() );
+  QVector<QgsDataItem*> children;
+
+  // get children from sublayers
+  if ( sublayers.count() > 0 )
+  {
+    QApplication::setOverrideCursor( Qt::WaitCursor );
+    QgsDataItem * childItem = NULL;
+    QgsDebugMsg( QString( "got %1 sublayers" ).arg( sublayers.count() ) );
+    for ( int i = 0; i < sublayers.count(); i++ )
+    {
+      QString name = sublayers[i];
+      // replace full path with basename+extension
+      name.replace( mPath, mName );
+      // use subdataset name only - perhaps only if name is long
+      if ( name.length() > 50 )
+        name = name.split( mName )[1].mid( 2 );
+      childItem = new QgsGdalLayerItem( this, name, sublayers[i], sublayers[i] );
+      if ( childItem )
+        this->addChildItem( childItem );
+    }
+    QApplication::restoreOverrideCursor();
+  }
+
+  return children;
+}
 
 // ---------------------------------------------------------------------------
 
@@ -117,30 +153,8 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
     QString name = info.completeBaseName() + "." + QFileInfo( thePath ).suffix();
     QString uri = thePath;
 
-    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, uri );
-
-    QgsDataItem * childItem = NULL;
-    GDALDatasetH hChildDS = NULL;
-
-    if ( item && sublayers.count() > 1 )
-    {
-      QgsDebugMsg( QString( "dataItem() got %1 sublayers" ).arg( sublayers.count() ) );
-      for ( int i = 0; i < sublayers.count(); i++ )
-      {
-        hChildDS = GDALOpen( TO8F( sublayers[i] ), GA_ReadOnly );
-        if ( hChildDS )
-        {
-          GDALClose( hChildDS );
-
-          QString name = sublayers[i];
-          //replace full path with basename+extension
-          name.replace( thePath, QFileInfo( thePath ).completeBaseName() + "." + QFileInfo( thePath ).suffix() );
-          childItem = new QgsGdalLayerItem( item, name, thePath + "/" + name, sublayers[i] );
-          if ( childItem )
-            item->addChildItem( childItem );
-        }
-      }
-    }
+    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, uri,
+        &sublayers );
 
     return item;
   }

@@ -20,6 +20,7 @@ QgsPGConnectionItem::~QgsPGConnectionItem()
 QVector<QgsDataItem*> QgsPGConnectionItem::createChildren()
 {
   QgsDebugMsg( "Entered" );
+  QApplication::setOverrideCursor( Qt::WaitCursor );
   QVector<QgsDataItem*> children;
   QgsDataSourceURI uri = QgsPostgresConn::connUri( mName );
 
@@ -82,6 +83,7 @@ QVector<QgsDataItem*> QgsPGConnectionItem::createChildren()
   if ( columnTypeThread )
     columnTypeThread->start();
 
+  QApplication::restoreOverrideCursor();
   return children;
 }
 
@@ -257,11 +259,13 @@ QgsPGRootItem::~QgsPGRootItem()
 
 QVector<QgsDataItem*> QgsPGRootItem::createChildren()
 {
+  QApplication::setOverrideCursor( Qt::WaitCursor );
   QVector<QgsDataItem*> connections;
   foreach( QString connName, QgsPostgresConn::connectionList() )
   {
     connections << new QgsPGConnectionItem( this, connName, mPath + "/" + connName );
   }
+  QApplication::restoreOverrideCursor();
   return connections;
 }
 

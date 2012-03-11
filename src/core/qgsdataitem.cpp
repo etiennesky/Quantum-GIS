@@ -172,6 +172,9 @@ QVector<QgsDataItem*> QgsDataItem::createChildren( )
 
 void QgsDataItem::populate()
 {
+  if ( mPopulated )
+    return;
+
   QVector<QgsDataItem*> children = createChildren( );
   foreach( QgsDataItem *child, children )
   {
@@ -386,6 +389,7 @@ QgsDirectoryItem::~QgsDirectoryItem()
 
 QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
 {
+  QApplication::setOverrideCursor( Qt::WaitCursor );
   QVector<QgsDataItem*> children;
   QDir dir( mPath );
   QStringList entries = dir.entryList( QDir::AllDirs | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase );
@@ -438,6 +442,7 @@ QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
       }
     }
   }
+  QApplication::restoreOverrideCursor();
   return children;
 }
 

@@ -135,7 +135,12 @@ void QgsBrowserDockWidget::itemClicked( const QModelIndex& index )
   {
     QgsLayerItem *layerItem = qobject_cast<QgsLayerItem*>( dataItem );
     if ( layerItem != NULL )
+    {
+      // this might take a long time if there are many sublayers
+      QApplication::setOverrideCursor( Qt::WaitCursor );
       addLayer( layerItem );
+      QApplication::restoreOverrideCursor();
+    }
   }
 }
 

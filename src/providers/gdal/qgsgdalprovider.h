@@ -308,6 +308,7 @@ class QgsGdalProvider : public QgsRasterDataProvider
 
     QList<QgsRasterPyramid> mPyramidList;
 
+    QStringList mSubLayers;
 };
 
 #endif

@@ -301,6 +301,7 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
 
     QAction *actionToggleFullScreen() { return mActionToggleFullScreen; }
     QAction *actionOptions() { return mActionOptions; }
+    QAction *actionSettingsEditor() { return mActionSettingsEditor; }
     QAction *actionCustomProjection() { return mActionCustomProjection; }
     QAction *actionConfigureShortcuts() { return mActionConfigureShortcuts; }
 
@@ -660,6 +661,8 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     void customize();
     //! options dialog slot
     void options();
+    //! Settings Editor dialog slot
+    void settingsEditor();
     //! Whats-this help slot
     void whatsThis();
     //! Set project properties, including map untis

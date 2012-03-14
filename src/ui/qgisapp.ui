@@ -1618,6 +1618,24 @@
     <string>Offset Curve</string>
    </property>
   </action>
+  <action name="mActionSettingsEditor">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../images/images.qrc">
+     <normaloff>:/images/themes/default/mIconEditable.png</normaloff>:/images/themes/default/mIconEditable.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Settings Editor</string>
+   </property>
+   <property name="toolTip">
+    <string>Advanced Settings Editor</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../../images/images.qrc"/>

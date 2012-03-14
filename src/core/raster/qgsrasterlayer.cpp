@@ -1041,7 +1041,7 @@ bool QgsRasterLayer::identify( const QgsPoint& thePoint, QMap<QString, QString>&
 {
   theResults.clear();
 
-  QgsDebugMsg( "identify provider : " + mProviderKey ) ;
+  //  QgsDebugMsg( "identify provider : " + mProviderKey ) ;
   return ( mDataProvider->identify( thePoint, theResults ) );
 }
 

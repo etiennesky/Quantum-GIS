@@ -231,6 +231,8 @@
 
 #include "nodetool/qgsmaptoolnodetool.h"
 
+#include "settingseditor/settingstree.h"
+
 //
 // Conditional Includes
 //
@@ -889,6 +891,7 @@ void QgisApp::createActions()
   connect( mActionToggleFullScreen, SIGNAL( triggered() ), this, SLOT( toggleFullScreen() ) );
   connect( mActionProjectProperties, SIGNAL( triggered() ), this, SLOT( projectProperties() ) );
   connect( mActionOptions, SIGNAL( triggered() ), this, SLOT( options() ) );
+  connect( mActionSettingsEditor, SIGNAL( triggered() ), this, SLOT( settingsEditor() ) );
   connect( mActionCustomProjection, SIGNAL( triggered() ), this, SLOT( customProjection() ) );
   connect( mActionConfigureShortcuts, SIGNAL( triggered() ), this, SLOT( configureShortcuts() ) );
   connect( mActionStyleManagerV2, SIGNAL( triggered() ), this, SLOT( showStyleManagerV2() ) );
@@ -1143,6 +1146,13 @@ void QgisApp::createMenus()
   // add What's this button to it
   QAction* before = mActionHelpAPI;
   mHelpMenu->insertAction( before, QWhatsThis::createAction() );
+
+  // Settings Editor
+  // this in options dialog
+  // this should probably only be available to devs
+  // so if it is added it here it should be disabled somehow, maybe a config option?
+  // mSettingsMenu->addSeparator( );
+  // mSettingsMenu->addAction( mActionSettingsEditor );
 }
 
 void QgisApp::createToolBars()
@@ -4955,6 +4965,35 @@ void QgisApp::options()
   }
 
   delete optionsDialog;
+}
+
+void QgisApp::settingsEditor()
+{
+  QDialog *settingsDialog = new QDialog( this );
+  settingsDialog->setModal( true );
+  settingsDialog->setWindowTitle( tr( "Settings Editor" ) );
+
+  QLabel *label = new QLabel( settingsDialog );
+  label->setText( tr( "\nSettings Editor - Use at your own risk!!! "
+                      "Any changes here are applied immediately.\n" ) );
+
+  SettingsTree *settingsTree = new SettingsTree( settingsDialog );
+  QSettings settings;
+  settingsTree->setSettingsObject( &settings );
+  settingsTree->show();
+
+  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
+      Qt::Horizontal, settingsDialog );
+  connect( buttonBox, SIGNAL( accepted() ), settingsDialog, SLOT( accept() ) );
+  connect( buttonBox, SIGNAL( rejected() ), settingsDialog, SLOT( reject() ) );
+
+  QVBoxLayout *layout = new QVBoxLayout( settingsDialog );
+  layout->addWidget( label );
+  layout->addWidget( settingsTree );
+  layout->addWidget( buttonBox );
+  settingsDialog->setLayout( layout );
+
+  settingsDialog->exec();
 }
 
 void QgisApp::fullHistogramStretch()

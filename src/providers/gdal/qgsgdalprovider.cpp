@@ -1039,7 +1039,7 @@ int QgsGdalProvider::ySize() const { return mHeight; }
 
 bool QgsGdalProvider::identify( const QgsPoint& thePoint, QMap<QString, QString>& theResults )
 {
-  QgsDebugMsg( "Entered" );
+  // QgsDebugMsg( "Entered" );
   if ( !mExtent.contains( thePoint ) )
   {
     // Outside the raster

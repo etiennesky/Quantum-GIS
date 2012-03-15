@@ -205,6 +205,7 @@ int QgsLegend::addGroup( QString name, bool expand, QTreeWidgetItem* parent )
     if ( nameEmpty )
       name = GetUniqueGroupName( tr( "group" ), groups() );
     group = new QgsLegendGroup( this, name );
+
     if ( currentItem() )
     {
       moveItem( group, currentItem() );
@@ -218,6 +219,9 @@ int QgsLegend::addGroup( QString name, bool expand, QTreeWidgetItem* parent )
     openEditor();
 
   blockSignals( false );
+
+  emit itemAdded( groupIndex.row() );
+
   return groupIndex.row();
 }
 
@@ -304,6 +308,7 @@ void QgsLegend::removeLayer( QString layerId )
   updateMapCanvasLayerSet();
   adjustIconSize();
 
+  emit itemRemoved();
   if ( invLayerRemoved )
     emit invisibleLayerRemoved();
 }
@@ -901,6 +906,8 @@ void QgsLegend::addLayer( QgsMapLayer * layer )
   }
   //make the QTreeWidget item up-to-date
   doItemsLayout();
+
+  emit itemAdded( index );
 }
 
 void QgsLegend::setLayerVisible( QgsMapLayer * layer, bool visible )
@@ -1132,6 +1139,8 @@ void QgsLegend::removeGroup( QgsLegendGroup *lg )
 
   delete lg;
 
+  emit itemRemoved();
+
   adjustIconSize();
 }
 
@@ -1165,6 +1174,8 @@ void QgsLegend::moveLayer( QgsMapLayer *ml, int groupIndex )
     return;
 
   insertItem( layer, group );
+
+  emit itemMovedGroup( dynamic_cast<QgsLegendItem*>( layer ), groupIndex );
 }
 
 void QgsLegend::legendLayerShowInOverview()
@@ -1799,11 +1810,14 @@ void QgsLegend::insertItem( QTreeWidgetItem* move, QTreeWidgetItem* into )
     }
     intoItem->receive( movedItem );
     movedItem->restoreAppearanceSettings();//apply the settings again
+    emit itemMovedGroup( movedItem, indexFromItem( intoItem ).row() );
   }
 }
 
 void QgsLegend::moveItem( QTreeWidgetItem* move, QTreeWidgetItem* after )
 {
+  QModelIndex oldIndex = indexFromItem( move );
+
   QgsDebugMsgLevel( QString( "Moving layer : %1 (%2)" ).arg( move->text( 0 ) ).arg( move->type() ), 3 );
   if ( after )
   {
@@ -1842,6 +1856,8 @@ void QgsLegend::moveItem( QTreeWidgetItem* move, QTreeWidgetItem* after )
   }
 
   static_cast<QgsLegendItem*>( move )->restoreAppearanceSettings();//apply the settings again
+
+  emit itemMoved( oldIndex, indexFromItem( move ) );
 }
 
 void QgsLegend::removeItem( QTreeWidgetItem* item )

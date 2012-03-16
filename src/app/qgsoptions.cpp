@@ -66,10 +66,6 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WFlags fl ) :
 
   connect( this, SIGNAL( accepted() ), this, SLOT( saveOptions() ) );
 
-  // settings editor can be opened here, but changes will be lost and dialog will be closed
-  connect( mBtnSettingsEditor, SIGNAL( clicked() ), this, SLOT( reject() ) );
-  connect( mBtnSettingsEditor, SIGNAL( clicked() ), QgisApp::instance()->actionSettingsEditor(), SIGNAL( triggered() ) );
-
   QStringList styles = QStyleFactory::keys();
   foreach( QString style, styles )
   {

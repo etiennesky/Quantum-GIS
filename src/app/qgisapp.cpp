@@ -1145,14 +1145,14 @@ void QgisApp::createMenus()
   // Help menu
   // add What's this button to it
   QAction* before = mActionHelpAPI;
-  mHelpMenu->insertAction( before, QWhatsThis::createAction() );
+  mHelpMenu->insertAction( before, QWhatsThis::createAction( ) );
 
   // Settings Editor
-  // this in options dialog
-  // this should probably only be available to devs
-  // so if it is added it here it should be disabled somehow, maybe a config option?
-  // mSettingsMenu->addSeparator( );
-  // mSettingsMenu->addAction( mActionSettingsEditor );
+  // should only be available in Debug mode
+#ifdef QGISDEBUG
+  mSettingsMenu->addSeparator( );
+  mSettingsMenu->addAction( mActionSettingsEditor );
+#endif
 }
 
 void QgisApp::createToolBars()

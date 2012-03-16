@@ -30,7 +30,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
+   <item row="2" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
@@ -65,13 +65,13 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-146</y>
-            <width>785</width>
-            <height>917</height>
+            <y>0</y>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="0">
             <widget class="QGroupBox" name="groupBox_11">
              <property name="title">
               <string>Project files</string>
@@ -94,16 +94,10 @@
              </layout>
             </widget>
            </item>
-           <item>
+           <item row="1" column="0">
             <widget class="QGroupBox" name="groupBox_9">
              <property name="title">
               <string>Default Map Appearance (overridden by project properties)</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
              </property>
              <layout class="QGridLayout">
               <item row="0" column="0">
@@ -175,7 +169,7 @@
              </layout>
             </widget>
            </item>
-           <item>
+           <item row="2" column="0">
             <widget class="QGroupBox" name="groupBox">
              <property name="title">
               <string>Application</string>
@@ -604,38 +598,6 @@
              </layout>
             </widget>
            </item>
-           <item>
-            <widget class="Line" name="line">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_14">
-             <item>
-              <widget class="QToolButton" name="mBtnSettingsEditor">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset resource="../../images/images.qrc">
-                 <normaloff>:/images/themes/default/mIconProperties.png</normaloff>:/images/themes/default/mIconProperties.png</iconset>
-               </property>
-               <property name="toolButtonStyle">
-                <enum>Qt::ToolButtonIconOnly</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_25">
-               <property name="text">
-                <string>Open Settings Editor (closes this window)</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
           </layout>
          </widget>
         </widget>
@@ -764,8 +726,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
@@ -938,8 +900,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_4">
@@ -1224,8 +1186,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_10">
@@ -1299,8 +1261,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>783</width>
-            <height>742</height>
+            <width>795</width>
+            <height>764</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_13">
@@ -1675,8 +1637,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
@@ -1849,8 +1811,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_17">
@@ -1946,8 +1908,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>803</width>
-            <height>762</height>
+            <width>809</width>
+            <height>778</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_20">
@@ -2176,6 +2138,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>tabWidget</tabstop>
   <tabstop>scrollArea_2</tabstop>
   <tabstop>chbAskToSaveProjectChanges</tabstop>
   <tabstop>chbWarnOldProjectVersion</tabstop>

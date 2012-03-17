@@ -405,7 +405,7 @@ QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
   foreach( QString subdir, entries )
   {
     QString subdirPath = dir.absoluteFilePath( subdir );
-    qDebug( "creating subdir: %s", subdirPath.toAscii().data() );
+    QgsDebugMsg( QString( "creating subdir: %1").arg( subdirPath ) );
 
     QgsDirectoryItem *item = new QgsDirectoryItem( this, subdir, subdirPath );
     // propagate signals up to top

@@ -106,10 +106,11 @@ QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
   hlayout->setAlignment( Qt::AlignLeft );
 
   hlayout->addSpacing( 5 );
-  hlayout->addWidget( collapseButton );
-  hlayout->addSpacing( 5 );
   hlayout->addWidget( refreshButton );
+  hlayout->addSpacing( 5 );
   hlayout->addWidget( addLayersButton );
+  hlayout->addStretch( );
+  hlayout->addWidget( collapseButton );
   layout->addLayout( hlayout );
   layout->addWidget( mBrowserView );
 

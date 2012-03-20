@@ -122,6 +122,15 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
          extensions.indexOf( "aux.xml" ) < 0 )
       return 0;
 
+    //skip *.zip files that are probably not gdal files (shp, sqlite, etc)
+    if ( thePath.right( 4 ) == ".zip" ) {
+      if ( thePath.right( 7 ) == "shp.zip" || 
+           thePath.right( 10 ) == "sqlite.zip" ||
+           thePath.right( 6 ) == "db.zip" )
+        return 0;
+    }
+
+
     // Filter files by extension
     if ( extensions.indexOf( info.suffix().toLower() ) < 0 )
     {

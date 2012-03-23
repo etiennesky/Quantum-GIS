@@ -4,6 +4,7 @@
 
 #include <QFileInfo>
 #include <QApplication>
+#include <QSettings>
 
 // defined in qgsgdalprovider.cpp
 void buildSupportedRasterFileFilterAndExtensions( QString & theFileFiltersString, QStringList & theExtensions, QStringList & theWildcards );
@@ -91,6 +92,7 @@ QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
 
 // ---------------------------------------------------------------------------
 
+static QString filterString;
 static QStringList extensions = QStringList();
 static QStringList wildcards = QStringList();
 
@@ -104,83 +106,133 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
   if ( thePath.isEmpty() )
     return 0;
 
+  QgsDebugMsg( "thePath= " + thePath );
+
+  QString uri = thePath;
   QFileInfo info( thePath );
-  if ( info.isFile() )
+  QSettings settings;
+  //extract basename with extension
+  QString name = info.fileName();
+  int scanItemsSetting = settings.value( "/qgis/scanItemsInBrowser", 0 ).toInt();
+  int scanZipSetting = settings.value( "/qgis/scanZipInBrowser", 1 ).toInt();
+
+  // allow normal files or VSIFILE items to pass
+  if ( ! info.isFile() &&
+       thePath.left( 8 ) != "/vsizip/" &&
+       thePath.left( 9 ) != "/vsigzip/" )
+    return 0;
+
+  // get supported extensions
+  if ( extensions.isEmpty() )
   {
-    // get supported extensions
-    if ( extensions.isEmpty() )
-    {
-      QString filterString;
-      buildSupportedRasterFileFilterAndExtensions( filterString, extensions, wildcards );
-      QgsDebugMsg( "extensions: " + extensions.join( " " ) );
-      QgsDebugMsg( "wildcards: " + wildcards.join( " " ) );
-    }
-
-    // skip *.aux.xml files (GDAL auxilary metadata files)
-    // unless that extension is in the list (*.xml might be though)
-    if ( thePath.right( 8 ) == ".aux.xml" &&
-         extensions.indexOf( "aux.xml" ) < 0 )
-      return 0;
-
-    //skip *.zip files that are probably not gdal files (shp, sqlite, etc)
-    if ( thePath.right( 4 ) == ".zip" ) {
-      if ( thePath.right( 7 ) == "shp.zip" || 
-           thePath.right( 10 ) == "sqlite.zip" ||
-           thePath.right( 6 ) == "db.zip" )
-        return 0;
-    }
-
-
-    // Filter files by extension
-    if ( extensions.indexOf( info.suffix().toLower() ) < 0 )
-    {
-      bool matches = false;
-      foreach( QString wildcard, wildcards )
-      {
-        QRegExp rx( wildcard, Qt::CaseInsensitive, QRegExp::Wildcard );
-        if ( rx.exactMatch( info.fileName() ) )
-        {
-          matches = true;
-          break;
-        }
-      }
-      if ( !matches )
-        return 0;
-    }
-
-    // try to open using VSIFileHandler
-    // TODO use the file name of the file inside the zip for layer name
-    if ( thePath.right( 4 ) == ".zip" )
-    {
-      if ( thePath.left( 8 ) != "/vsizip/" )
-        thePath = "/vsizip/" + thePath;
-    }
-    else if ( thePath.right( 3 ) == ".gz" )
-    {
-      if ( thePath.left( 9 ) != "/vsigzip/" )
-        thePath = "/vsigzip/" + thePath;
-    }
-
-    GDALAllRegister();
-    GDALDatasetH hDS = GDALOpen( TO8F( thePath ), GA_ReadOnly );
-
-    if ( !hDS )
-      return 0;
-
-    QStringList sublayers = QgsGdalProvider::subLayers( hDS );
-
-    GDALClose( hDS );
-
-    QgsDebugMsg( "GdalDataset opened " + thePath );
-
-    //extract basename with extension
-    QString name = info.completeBaseName() + "." + info.suffix();
-    QString uri = thePath;
-
-    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, uri,
-        &sublayers );
-
-    return item;
+    buildSupportedRasterFileFilterAndExtensions( filterString, extensions, wildcards );
+    QgsDebugMsg( "extensions: " + extensions.join( " " ) );
+    QgsDebugMsg( "wildcards: " + wildcards.join( " " ) );
   }
-  return 0;
+
+  // skip *.aux.xml files (GDAL auxilary metadata files)
+  // unless that extension is in the list (*.xml might be though)
+  if ( thePath.right( 8 ) == ".aux.xml" &&
+       extensions.indexOf( "aux.xml" ) < 0 )
+    return 0;
+
+  // Filter files by extension
+  if ( extensions.indexOf( info.suffix().toLower() ) < 0 )
+  {
+    bool matches = false;
+    foreach( QString wildcard, wildcards )
+    {
+      QRegExp rx( wildcard, Qt::CaseInsensitive, QRegExp::Wildcard );
+      if ( rx.exactMatch( info.fileName() ) )
+      {
+        matches = true;
+        break;
+      }
+    }
+    if ( !matches )
+      return 0;
+  }
+
+  // vsifile : depending on options we should just add the item without testing
+  if ( thePath.left( 8 ) == "/vsizip/" )
+  {
+    // if this is a /vsigzip/path.zip/file_inside_zip change the name
+    if ( thePath != "/vsizip/" + parentItem->path() )
+    {
+      name = thePath;
+      name = name.replace( "/vsizip/" + parentItem->path() + "/", "" );
+    }
+
+    // unless setting== 2 (passthru) or 3 (Full scan), return an item without testing
+    if ( scanZipSetting != 2 && scanZipSetting != 3 )
+    {
+      QStringList sublayers;
+      QgsDebugMsg( QString( "adding item name=%1 thePath=%2 uri=%3" ).arg( name ).arg( thePath ).arg( uri ) );
+      QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath, &sublayers );
+      if ( item )
+        return item;
+    }
+  }
+
+  // if scan items == "Check extension", add item here without trying to open
+  if ( scanItemsSetting == 1 )
+  {
+    QStringList sublayers;
+    QgsDebugMsg( QString( "adding item name=%1 thePath=%2 uri=%3" ).arg( name ).arg( thePath ).arg( uri ) );
+    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath, &sublayers );
+    if ( item )
+      return item;
+  }
+
+  // try to open using VSIFileHandler
+  if ( thePath.right( 4 ) == ".zip" )
+  {
+    if ( thePath.left( 8 ) != "/vsizip/" )
+      thePath = "/vsizip/" + thePath;
+  }
+  else if ( thePath.right( 3 ) == ".gz" )
+  {
+    if ( thePath.left( 9 ) != "/vsigzip/" )
+      thePath = "/vsigzip/" + thePath;
+  }
+
+  // test that file is valid with GDAL
+  GDALAllRegister();
+  // do not print errors, but write to debug
+  CPLErrorHandler oErrorHandler = CPLSetErrorHandler( CPLQuietErrorHandler );
+  CPLErrorReset();
+  GDALDatasetH hDS = GDALOpen( TO8F( thePath ), GA_ReadOnly );
+  CPLSetErrorHandler( oErrorHandler );
+
+  if ( ! hDS )
+  {
+    QgsDebugMsg( QString( "GDALOpen error # %1 : %2 " ).arg( CPLGetLastErrorNo() ).arg( CPLGetLastErrorMsg() ) );
+    return 0;
+  }
+
+  QStringList sublayers = QgsGdalProvider::subLayers( hDS );
+
+  GDALClose( hDS );
+
+  QgsDebugMsg( "GdalDataset opened " + thePath );
+
+  QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath,
+      &sublayers );
+
+  return item;
+}
+
+QGISEXTERN QStringList supportedExtensions()
+{
+  QStringList extensionsList;
+
+  // get supported extensions
+  if ( extensions.isEmpty() )
+  {
+    buildSupportedRasterFileFilterAndExtensions( filterString, extensions, wildcards );
+  }
+  QgsDebugMsg( "filterstring: " + filterString + " \next: " + extensions.join( " " ) + " wildcards: \n" + wildcards.join( " " ) );
+  extensionsList << filterString << extensions.join( " " ) << wildcards.join( " " );
+
+  return extensionsList;
 }

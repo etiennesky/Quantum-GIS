@@ -156,8 +156,10 @@
         <file>themes/default/mActionZoomOut.png</file>
         <file>themes/default/mActionZoomToLayer.png</file>
         <file>themes/default/mActionZoomToSelected.png</file>
+        <file>themes/default/mIconDbSchema.png</file>
         <file>themes/default/mIconDelete.png</file>
         <file>themes/default/mIconEditable.png</file>
+        <file>themes/default/mIconFavourites.png</file>
         <file>themes/default/mIconFirst.png</file>
         <file>themes/default/mIconGeometryLayer.png</file>
         <file>themes/default/mIconLast.png</file>
@@ -176,6 +178,7 @@
         <file>themes/default/mIconProperties.png</file>
         <file>themes/default/mIconPyramid.png</file>
         <file>themes/default/mIconStopRendering.png</file>
+        <file>themes/default/mIconRaster.png</file>
         <file>themes/default/mIconRenderingEnabled.png</file>
         <file>themes/default/mIconRenderingDisabled.png</file>
         <file>themes/default/mIconSymbology.png</file>
@@ -185,6 +188,7 @@
         <file>themes/default/mIconWms.png</file>
         <file>themes/default/mIconWmsLayer.png</file>
         <file>themes/default/mIconWarn.png</file>
+        <file>themes/default/mIconZip.png</file>
         <file>themes/default/mMapserverExport.png</file>
         <file>themes/default/plugin.png</file>
         <file>themes/default/propertyicons/action.png</file>

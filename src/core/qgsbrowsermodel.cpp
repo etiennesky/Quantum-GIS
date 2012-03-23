@@ -12,6 +12,8 @@
 #include "qgsbrowsermodel.h"
 
 #include <QSettings>
+#include <iostream>
+
 
 QgsBrowserModel::QgsBrowserModel( QObject *parent ) :
     QAbstractItemModel( parent )
@@ -37,11 +39,33 @@ void QgsBrowserModel::addRootItems()
   // add favourite directories
   QSettings settings;
   QStringList favDirs = settings.value( "/browser/favourites", QVariant() ).toStringList();
+  // this icon added by ET, modfied mIconNew and set colour to that of folder icon
+  QIcon favIcon = QIcon( QPixmap( QgsApplication::defaultThemePath() + QDir::separator() +  "/mIconFavourites.png" ) );
+
+  // if there are 5 or more items, create a "Favourites" Root item
+  // perhaps this should be the default?
+  QgsDataCollectionItem *favRootItem = NULL;
+  if ( favDirs.count() >= 5 )
+  {
+    favRootItem = new QgsDataCollectionItem( NULL, tr( "Favourites" ), "" );
+    favRootItem->setIcon( favIcon );
+    connectItem( favRootItem );
+    mRootItems << favRootItem;
+  }
+
   foreach( QString favDir, favDirs )
   {
-    QgsDirectoryItem *item = new QgsDirectoryItem( NULL, favDir, favDir );
+    item = new QgsDirectoryItem( favRootItem, favDir, favDir );
+    if ( favRootItem )
+    {
+      favRootItem->addChildItem( item );
+    }
+    else
+    {
+      item->setIcon( favIcon );
+      mRootItems << item;
+    }
     connectItem( item );
-    mRootItems << item;
   }
 
   foreach( QFileInfo drive, QDir::drives() )

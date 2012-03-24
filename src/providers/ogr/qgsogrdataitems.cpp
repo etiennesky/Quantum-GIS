@@ -242,6 +242,15 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
 
   QStringList myExtensions = fileExtensions();
 
+  // skip *.aux.xml files (GDAL auxilary metadata files) and .shp.xml files (ESRI metadata)
+  // unless that extension is in the list (*.xml might be though)
+  if ( thePath.right( 8 ).toLower() == ".aux.xml" &&
+       myExtensions.indexOf( "aux.xml" ) < 0 )
+    return 0;
+  if ( thePath.right( 8 ).toLower() == ".shp.xml" &&
+       myExtensions.indexOf( "shp.xml" ) < 0 )
+    return 0;
+
   // We have to filter by extensions, otherwise e.g. all Shapefile files are displayed
   // because OGR drive can open also .dbf, .shx.
   if ( myExtensions.indexOf( info.suffix().toLower() ) < 0 )
@@ -267,12 +276,6 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
     if ( QFileInfo( pathShp ).exists() )
       return 0;
   }
-
-  // filter .shp.xml files (ESRI metadata)
-  // if ( info.completeSuffix().toLower() == "shp.xml" )
-  // {
-  //   return 0;
-  // }
 
   // vsifile : depending on options we should just add the item without testing
   if ( thePath.left( 8 ) == "/vsizip/" )

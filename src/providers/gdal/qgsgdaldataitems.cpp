@@ -132,7 +132,7 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
 
   // skip *.aux.xml files (GDAL auxilary metadata files)
   // unless that extension is in the list (*.xml might be though)
-  if ( thePath.right( 8 ) == ".aux.xml" &&
+  if ( thePath.right( 8 ).toLower() == ".aux.xml" &&
        extensions.indexOf( "aux.xml" ) < 0 )
     return 0;
 

@@ -82,7 +82,7 @@ class GUI_EXPORT QgsLegendInterface : public QObject
     void groupRelationsChanged( );
 
     /* //! emitted when an item (group/layer) is added */
-    void itemAdded( int index );
+    void itemAdded( QModelIndex index );
 
     /* //! emitted when an item (group/layer) is removed */
     void itemRemoved( );

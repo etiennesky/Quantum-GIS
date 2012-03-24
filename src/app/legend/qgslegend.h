@@ -515,7 +515,7 @@ class QgsLegend : public QTreeWidget
     void updateGroupCheckStates( QTreeWidgetItem *item );
 
   signals:
-    void itemAdded( int index );
+    void itemAdded( QModelIndex index );
     void itemMoved( QModelIndex oldIndex, QModelIndex newIndex );
     void itemMovedGroup( QgsLegendItem *item, int newGroupIndex ); // should we add oldGroup?
     void itemRemoved( ); // should we add an argument?

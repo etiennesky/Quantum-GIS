@@ -24,10 +24,11 @@
 QgsAppLegendInterface::QgsAppLegendInterface( QgsLegend * legend )
     : mLegend( legend )
 {
-  connect( legend, SIGNAL( itemAdded( int ) ), this, SIGNAL( itemAdded( int ) ) );
+  connect( legend, SIGNAL( itemAdded( QModelIndex ) ), this, SIGNAL( itemAdded( int ) ) );
   connect( legend, SIGNAL( itemMoved( QModelIndex, QModelIndex ) ), this, SLOT( updateIndex( QModelIndex, QModelIndex ) ) );
   connect( legend, SIGNAL( itemMoved( QModelIndex, QModelIndex ) ), this, SIGNAL( groupRelationsChanged( ) ) );
   connect( legend, SIGNAL( itemMovedGroup( QgsLegendItem *, int ) ), this, SIGNAL( groupRelationsChanged() ) );
+  // connect( legend, SIGNAL( itemChanged( QTreeWidgetItem*, int ) ), this, SIGNAL( groupRelationsChanged() ) );
   connect( legend, SIGNAL( itemRemoved() ), this, SIGNAL( itemRemoved() ) );
 }
 

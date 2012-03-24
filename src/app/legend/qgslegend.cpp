@@ -220,7 +220,7 @@ int QgsLegend::addGroup( QString name, bool expand, QTreeWidgetItem* parent )
 
   blockSignals( false );
 
-  emit itemAdded( groupIndex.row() );
+  emit itemAdded( groupIndex );
 
   return groupIndex.row();
 }
@@ -907,7 +907,7 @@ void QgsLegend::addLayer( QgsMapLayer * layer )
   //make the QTreeWidget item up-to-date
   doItemsLayout();
 
-  emit itemAdded( index );
+  emit itemAdded( indexFromItem( llayer ) );
 }
 
 void QgsLegend::setLayerVisible( QgsMapLayer * layer, bool visible )
@@ -2493,17 +2493,33 @@ void QgsLegend::groupSelectedLayers()
                                 GetUniqueGroupName( tr( "group" ), groups() ) );
   }
 
+  // save old indexes so we can notify changes
+  QList< QModelIndex > oldIndexes;
+  QList< QTreeWidgetItem* > selected;
+
   foreach( QTreeWidgetItem * item, selectedItems() )
   {
     QgsLegendLayer* layer = dynamic_cast<QgsLegendLayer *>( item );
     if ( layer )
     {
-      insertItem( item, group );
+      oldIndexes.append( indexFromItem( item ) );
+      selected.append( item );
     }
   }
+  foreach( QTreeWidgetItem * item, selected )
+  {
+    insertItem( item, group );
+  }
+
   editItem( group, 0 );
 
   blockSignals( false );
 
+  // notify that group was added and that items were moved
+  emit itemAdded( indexFromItem( group ) );
+  for ( int i = 0; i < selected.size(); i++ )
+  {
+    emit itemMoved( oldIndexes[i], indexFromItem( selected[i] ) );
+  }
 }
 

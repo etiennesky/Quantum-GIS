@@ -75,6 +75,9 @@ class CORE_EXPORT QgsBrowserModel : public QAbstractItemModel
 
     void connectItem( QgsDataItem *item );
 
+    bool canFetchMore ( const QModelIndex & parent ) const;
+    void fetchMore ( const QModelIndex & parent );
+
   signals:
 
   public slots:

@@ -5,9 +5,9 @@
 #include <QMenu>
 #include <QSettings>
 #include <QToolButton>
+#include <QSortFilterProxyModel>
 
 #include "qgsbrowsermodel.h"
-#include "qgsdataitem.h"
 #include "qgslogger.h"
 #include "qgsmaplayerregistry.h"
 #include "qgsrasterlayer.h"
@@ -63,9 +63,83 @@ class QgsBrowserTreeView : public QTreeView
         e->ignore();
         return;
       }
-    }
+    } 
+
 };
 
+class QgsBrowserTreeFilterProxyModel : public QSortFilterProxyModel
+{
+public:
+  
+  QgsBrowserTreeFilterProxyModel(QObject *parent)
+    : QSortFilterProxyModel(parent), mModel( 0 )
+  {
+  }
+
+  void setBrowserModel( QgsBrowserModel* model )
+  {
+    mModel = model;
+    setSourceModel( model );
+  }
+
+  void setFilter( const QString & filter )
+  {
+    // setFilterRegExp( QRegExp( filter, Qt::CaseInsensitive,
+    //                           QRegExp::Wildcard ) );
+    QgsDebugMsg( "filter = " + filter );
+    mFilter = filter;
+    mREList.clear();
+    foreach ( QString f, mFilter.split("|") )
+    {
+      QRegExp rx( f.trimmed() ); 
+      rx.setPatternSyntax( QRegExp::WildcardUnix );
+      mREList.append( rx );
+    }
+    invalidateFilter();
+  }
+
+protected:
+
+  QgsBrowserModel* mModel;
+  QString mFilter;
+  QVector<QRegExp> mREList;
+
+  bool filterAcceptsRow(int sourceRow,
+                        const QModelIndex &sourceParent) const
+  {
+    // if ( filterRegExp().pattern() == QString( "" ) ) return true;
+    if ( mFilter == "" ) return true;
+
+    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);    
+    QgsDataItem* item = mModel->dataItem( index );
+    QgsDataItem* parentItem = mModel->dataItem( sourceParent );
+
+    // accept invalid items and data collections
+    if ( ! item )
+      return true;
+    if ( qobject_cast<QgsDataCollectionItem*>( item ) )
+      return true;
+
+    // filter normal files by extension
+    if ( qobject_cast<QgsDirectoryItem*>( parentItem ) && 
+         qobject_cast<QgsLayerItem*>( item ) )
+    {
+      QFileInfo fileInfo( item->path() );
+      // return ( filterRegExp().exactMatch( fileInfo.fileName() ) );
+      foreach( QRegExp rx, mREList )
+      {
+        // QgsDebugMsg( QString( "name: %1 rx: %2 match: %3" ).arg( fileInfo.fileName() ).arg(rx.pattern()).arg(rx.exactMatch( fileInfo.fileName() ) ) );
+        if ( rx.exactMatch( fileInfo.fileName() ) )
+          return true;
+      }
+      return false;
+    }
+
+    // accept anything else
+    return true;
+  }
+
+};
 QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
     QDockWidget( parent ), mModel( NULL )
 {
@@ -79,10 +153,14 @@ QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
   mBtnRefresh->setIcon( QgisApp::instance()->getThemeIcon( "mActionRefresh.png" ) );
   mBtnAddLayers->setIcon( QgisApp::instance()->getThemeIcon( "mActionAdd.png" ) );
   mBtnCollapse->setIcon( QgisApp::instance()->getThemeIcon( "mActionCollapseTree.png" ) );
+  // icon from http://www.fatcow.com/free-icons License: CC Attribution 3.0
+  mBtnFilter->setIcon( QgisApp::instance()->getThemeIcon( "mActionFilter.png" ) );
 
   connect( mBtnRefresh, SIGNAL( clicked() ), this, SLOT( refresh() ) );
   connect( mBtnAddLayers, SIGNAL( clicked() ), this, SLOT( addSelectedLayers() ) );
   connect( mBtnCollapse, SIGNAL( clicked() ), mBrowserView, SLOT( collapseAll() ) );
+  connect( mBtnFilter, SIGNAL( clicked() ), this, SLOT( setFilter() ) );
+  connect( mLeFilter, SIGNAL( returnPressed() ), this, SLOT( setFilter() ) );
 
   connect( mBrowserView, SIGNAL( customContextMenuRequested( const QPoint & ) ), this, SLOT( showContextMenu( const QPoint & ) ) );
   connect( mBrowserView, SIGNAL( doubleClicked( const QModelIndex& ) ), this, SLOT( addLayerAtIndex( const QModelIndex& ) ) );
@@ -95,12 +173,16 @@ void QgsBrowserDockWidget::showEvent( QShowEvent * e )
   if ( mModel == NULL )
   {
     mModel = new QgsBrowserModel( mBrowserView );
-    mBrowserView->setModel( mModel );
+
+    // mBrowserView->setModel( mModel );
+    mProxyModel = new QgsBrowserTreeFilterProxyModel(this);
+    mProxyModel->setBrowserModel( mModel );
+    mBrowserView->setModel( mProxyModel );
 
     // provide a horizontal scroll bar instead of using ellipse (...) for longer items
     mBrowserView->setTextElideMode( Qt::ElideNone );
     mBrowserView->header()->setResizeMode( 0, QHeaderView::ResizeToContents );
-    mBrowserView->header()->setStretchLastSection( false );
+    mBrowserView->header()->setStretchLastSection( false );   
   }
 
   QDockWidget::showEvent( e );
@@ -409,3 +491,8 @@ void QgsBrowserDockWidget::showProperties( )
   }
 }
 
+void QgsBrowserDockWidget::setFilter( )
+{
+  QString filter = mLeFilter->text();
+  mProxyModel->setFilter( filter );
+}

@@ -72,7 +72,8 @@ class QgsBrowserTreeFilterProxyModel : public QSortFilterProxyModel
 public:
   
   QgsBrowserTreeFilterProxyModel(QObject *parent)
-    : QSortFilterProxyModel(parent), mModel( 0 )
+    : QSortFilterProxyModel(parent), mModel( 0 ), 
+      mFilter( "" ), mPatternSyntax( QRegExp::Wildcard )
   {
   }
 
@@ -82,17 +83,42 @@ public:
     setSourceModel( model );
   }
 
+  void setFilterSyntax( const QRegExp::PatternSyntax & syntax )
+  { 
+    QgsDebugMsg( QString( "syntax = %1" ).arg( (int) mPatternSyntax ) );
+    if ( mPatternSyntax == syntax ) 
+      return;
+    mPatternSyntax = syntax;
+    updateFilter();
+  }
+
   void setFilter( const QString & filter )
   {
-    // setFilterRegExp( QRegExp( filter, Qt::CaseInsensitive,
-    //                           QRegExp::Wildcard ) );
-    QgsDebugMsg( "filter = " + filter );
+    QgsDebugMsg( QString( "filter = %1" ).arg( mFilter ) );
+    if ( mFilter == filter ) 
+      return;
     mFilter = filter;
+    updateFilter();
+  }
+
+  void updateFilter( )
+  {
+    QgsDebugMsg( QString( "filter = %1 syntax = %2" ).arg( mFilter ).arg( (int) mPatternSyntax ) );
     mREList.clear();
-    foreach ( QString f, mFilter.split("|") )
+    if ( mPatternSyntax == QRegExp::Wildcard ||
+         mPatternSyntax == QRegExp::WildcardUnix )
     {
-      QRegExp rx( f.trimmed() ); 
-      rx.setPatternSyntax( QRegExp::WildcardUnix );
+      foreach ( QString f, mFilter.split("|") )
+      {
+        QRegExp rx( f.trimmed() ); 
+        rx.setPatternSyntax( mPatternSyntax );
+        mREList.append( rx );
+      }
+    }
+    else 
+    {
+      QRegExp rx( mFilter.trimmed() ); 
+      rx.setPatternSyntax( mPatternSyntax );
       mREList.append( rx );
     }
     invalidateFilter();
@@ -101,11 +127,43 @@ public:
 protected:
 
   QgsBrowserModel* mModel;
-  QString mFilter;
-  QVector<QRegExp> mREList;
+  QString mFilter; //filter string provided
+  QVector<QRegExp> mREList; //list of filters, seperated by "|"
+  QRegExp::PatternSyntax mPatternSyntax;
 
-  bool filterAcceptsRow(int sourceRow,
-                        const QModelIndex &sourceParent) const
+  bool filterAcceptsString( const QString & value ) const
+  {
+    // return ( filterRegExp().exactMatch( fileInfo.fileName() ) );
+    if (  mPatternSyntax == QRegExp::Wildcard ||
+          mPatternSyntax == QRegExp::WildcardUnix )
+    {
+      foreach( QRegExp rx, mREList )
+      {
+        QgsDebugMsg( QString( "value: [%1] rx: [%2] match: %3" ).arg( value ).arg( rx.pattern() ).arg(rx.exactMatch( value )) );
+        if ( rx.exactMatch( value ) )
+          return true;
+      }
+    }
+    else
+    {
+      foreach( QRegExp rx, mREList )
+      {
+        QgsDebugMsg( QString( "value: [%1] rx: [%2] match: %3" ).arg( value ).arg( rx.pattern() ).arg( rx.indexIn( value ) ) ); 
+        QRegExp rx2("\\b(mail|letter|correspondence)\\b");
+        QgsDebugMsg( QString( "value: [%1] rx2: [%2] match: %3" ).arg( value ).arg( rx2.pattern() ).arg( rx2.indexIn( value ) ) ); 
+        QgsDebugMsg( QString("T1 %1").arg(rx2.indexIn("I sent you an email")));     // returns -1 (no match)
+        QgsDebugMsg( QString("T2 %2").arg(rx2.indexIn("Please write the letter")));     // returns -1 (no match)
+        QgsDebugMsg( QString("T3 %2").arg(rx.indexIn("Please write the letter")));     // returns -1 (no match)
+
+        if ( rx.indexIn( value ) != -1 )
+          return true;
+      }
+    }
+    return false;
+  }
+
+  bool filterAcceptsRow( int sourceRow,
+                         const QModelIndex &sourceParent ) const
   {
     // if ( filterRegExp().pattern() == QString( "" ) ) return true;
     if ( mFilter == "" ) return true;
@@ -114,25 +172,26 @@ protected:
     QgsDataItem* item = mModel->dataItem( index );
     QgsDataItem* parentItem = mModel->dataItem( sourceParent );
 
-    // accept invalid items and data collections
+    // accept "invalid" items and data collections
     if ( ! item )
       return true;
     if ( qobject_cast<QgsDataCollectionItem*>( item ) )
       return true;
 
-    // filter normal files by extension
-    if ( qobject_cast<QgsDirectoryItem*>( parentItem ) && 
-         qobject_cast<QgsLayerItem*>( item ) )
+    // filter layer items - this could be delegated to the providers but a little overkill
+    if ( parentItem && qobject_cast<QgsLayerItem*>( item ) )
     {
-      QFileInfo fileInfo( item->path() );
-      // return ( filterRegExp().exactMatch( fileInfo.fileName() ) );
-      foreach( QRegExp rx, mREList )
+      // filter normal files by extension
+      if ( qobject_cast<QgsDirectoryItem*>( parentItem ) ) 
       {
-        // QgsDebugMsg( QString( "name: %1 rx: %2 match: %3" ).arg( fileInfo.fileName() ).arg(rx.pattern()).arg(rx.exactMatch( fileInfo.fileName() ) ) );
-        if ( rx.exactMatch( fileInfo.fileName() ) )
-          return true;
+        QFileInfo fileInfo( item->path() );
+        return filterAcceptsString( fileInfo.fileName() );
       }
-      return false;
+      // filter other items (postgis, etc.) by name
+      else if ( qobject_cast<QgsDataCollectionItem*>( parentItem ) ) 
+      {
+        return filterAcceptsString( item->name() );
+      }
     }
 
     // accept anything else
@@ -153,14 +212,42 @@ QgsBrowserDockWidget::QgsBrowserDockWidget( QWidget * parent ) :
   mBtnRefresh->setIcon( QgisApp::instance()->getThemeIcon( "mActionRefresh.png" ) );
   mBtnAddLayers->setIcon( QgisApp::instance()->getThemeIcon( "mActionAdd.png" ) );
   mBtnCollapse->setIcon( QgisApp::instance()->getThemeIcon( "mActionCollapseTree.png" ) );
-  // icon from http://www.fatcow.com/free-icons License: CC Attribution 3.0
+
+  mWidgetFilter->hide();
+  // icons from http://www.fatcow.com/free-icons License: CC Attribution 3.0
+  mBtnFilterShow->setIcon( QgisApp::instance()->getThemeIcon( "mActionFilter.png" ) );
   mBtnFilter->setIcon( QgisApp::instance()->getThemeIcon( "mActionFilter.png" ) );
+  mBtnFilterClear->setIcon( QgisApp::instance()->getThemeIcon( "mActionFilterDelete.png" ) );
+
+  QMenu* menu = new QMenu( this );
+  menu->setSeparatorsCollapsible ( false );
+  mBtnFilterOptions->setMenu( menu );
+  QActionGroup* group = new QActionGroup( menu );
+  QAction* action = new QAction( tr( "Filter Pattern Syntax" ), group );
+  action->setSeparator( true );
+  menu->addAction( action );
+  // group->addAction( action );
+  action = new QAction( tr( "Wildcard(s)" ), group );
+  action->setData( QVariant( (int) QRegExp::Wildcard ) );
+  action->setCheckable( true );
+  action->setChecked( true );
+  menu->addAction( action );
+  // group->addAction( action );
+  // menu->addSeparator()->setText( tr( "Pattern Syntax" ) );
+  action = new QAction( tr( "Regular Expression" ), group );
+  action->setData( QVariant( (int) QRegExp::RegExp ) );
+  action->setCheckable( true );
+  menu->addAction( action );
+  // group->addAction( action );
 
   connect( mBtnRefresh, SIGNAL( clicked() ), this, SLOT( refresh() ) );
   connect( mBtnAddLayers, SIGNAL( clicked() ), this, SLOT( addSelectedLayers() ) );
   connect( mBtnCollapse, SIGNAL( clicked() ), mBrowserView, SLOT( collapseAll() ) );
+  connect( mBtnFilterShow, SIGNAL( toggled(bool) ), this, SLOT( showFilterWidget(bool) ) );
   connect( mBtnFilter, SIGNAL( clicked() ), this, SLOT( setFilter() ) );
   connect( mLeFilter, SIGNAL( returnPressed() ), this, SLOT( setFilter() ) );
+  connect( mBtnFilterClear, SIGNAL( clicked() ), this, SLOT( clearFilter() ) );
+  connect( group, SIGNAL( triggered (QAction *) ), this, SLOT( setFilterSyntax(QAction *)) );
 
   connect( mBrowserView, SIGNAL( customContextMenuRequested( const QPoint & ) ), this, SLOT( showContextMenu( const QPoint & ) ) );
   connect( mBrowserView, SIGNAL( doubleClicked( const QModelIndex& ) ), this, SLOT( addLayerAtIndex( const QModelIndex& ) ) );
@@ -491,8 +578,30 @@ void QgsBrowserDockWidget::showProperties( )
   }
 }
 
+void QgsBrowserDockWidget::showFilterWidget( bool visible )
+{
+  mWidgetFilter->setVisible( visible );
+  if ( ! visible )
+    clearFilter();
+}
+
 void QgsBrowserDockWidget::setFilter( )
 {
   QString filter = mLeFilter->text();
-  mProxyModel->setFilter( filter );
+  if ( mProxyModel )
+    mProxyModel->setFilter( filter );
 }
+
+void QgsBrowserDockWidget::setFilterSyntax(QAction * action)
+{
+  if ( !action || ! mProxyModel ) 
+    return;
+  mProxyModel->setFilterSyntax( ( QRegExp::PatternSyntax ) action->data().toInt() );
+}
+
+void QgsBrowserDockWidget::clearFilter( )
+{
+  mLeFilter->setText( "" );
+  setFilter();
+}
+

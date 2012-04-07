@@ -59,6 +59,68 @@
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_grid.h>
+#include <qwt_plot_marker.h>
+#include <qwt_plot_picker.h>
+#include <qwt_picker_machine.h>
+
+QString roundedString( double val, double min, double max )
+{
+  int digits1 = ( min == 0 ) ? 0 : ( floor( log10( abs( floor(min) ) ) ) + 1 ) ;
+  int digits2 = ( max == 0 ) ? 0 : ( floor( log10( abs( floor(max) ) ) ) + 1 ) ;
+  int digits  = ( digits1 > digits2 ) ? digits1 : digits2;
+  int digitssrc = ( val == 0 ) ? 0 : ( floor( log10( abs( floor(val) ) ) ) + 1 ) ;
+  QString ret = QString::number( val, 'g',  digitssrc + 1  );
+  QgsDebugMsg(QString("val= %1 min= %2 max= %3 digits= %4 digits1= %5 digits2= %6 digitssrc= %7 ret= %8").arg(val).arg(min).arg(max).arg(digits).arg(digits1).arg(digits2).arg(digitssrc).arg(ret));
+  return ret;
+}
+
+QString findClosestTickVal( double val, QwtScaleDiv * scale )
+{
+  if ( scale == NULL ) return "";
+
+  // foreach( double tickVal, scale->ticks( QwtScaleDiv::MinorTick ) )
+  // {
+  //   QgsDebugMsg(QString("tickVal= %1").arg(tickVal));
+  // }
+  // double tickVal;
+  // int closest = 0;
+  // for( int i=1; i<ticks.size(); i++ )
+  // {
+  //   tickVal = ticks[i];
+  //   QgsDebugMsg(QString("val= %1 tickVal= %2 diff-i= %3 diffi = %4").arg(val).arg(tickVal).arg(abs(val-ticks[i-1])).arg(abs(val-ticks[i])) );
+  //   if ( tickVal > val  )
+  //   {
+  //     closest = ( abs(val-ticks[i-1]) < abs(val-ticks[i]) ) ? i-1 : i;
+  //     break;
+  //   }
+  // }
+  // QgsDebugMsg(QString("closest= %1 tickVal= %2").arg(closest).arg(ticks[closest]) );
+
+  QList< double > minorTicks = scale->ticks( QwtScaleDiv::MinorTick );
+  QList< double > majorTicks = scale->ticks( QwtScaleDiv::MajorTick );
+  // double diff = ( ticks[1] - ticks[0] ) / 10;
+  double diff = ( minorTicks[1] - minorTicks[0] ) / 10;
+  double min = majorTicks[0] - diff;
+  double max = scale->upperBound();
+  double closest = val;
+  double current = min;
+    
+  // QgsDebugMsg(QString("diff= %1 min= %2 max= %3").arg(diff).arg(min).arg(max));
+  while ( current < max )
+  {
+    current += diff;
+    // QgsDebugMsg(QString("current= %1 val= %2").arg(current).arg(val));
+    if ( current > val )
+    {
+      closest = ( abs(val-current+diff) < abs(val-current) ) ? current-diff : current;
+      break;
+    }
+  }
+
+  // QgsDebugMsg(QString("closest= %1").arg(closest) );
+  // QgsDebugMsg(QString("val= %1 min= %2 max= %3 digits= %4 digits1= %5 digits2= %6 digitssrc= %7 ret= %8").arg(val).arg(min).arg(max).arg(digits).arg(digits1).arg(digits2).arg(digitssrc).arg(ret));
+  return QString::number( closest );
+}
 
 QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanvas* theCanvas, QWidget *parent, Qt::WFlags fl )
     : QDialog( parent, fl ),
@@ -272,18 +334,91 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
   // update based on lyr's current state
   sync();
 
-  QSettings settings;
-  restoreGeometry( settings.value( "/Windows/RasterLayerProperties/geometry" ).toByteArray() );
-  tabBar->setCurrentIndex( settings.value( "/Windows/RasterLayerProperties/row" ).toInt() );
+  //TMP ET histo
+  // histo picker / markers
+  mHistoPicker = NULL;
+  mHistoMarkerMin = NULL;
+  mHistoMarkerMax = NULL;
+
+  QgsDebugMsg("before");
+
+  if ( tabPageHistogram->isEnabled() )
+  {
+    leHistoMin->setValidator( new QDoubleValidator( this ) );
+    leHistoMax->setValidator( new QDoubleValidator( this ) );
+    leHistoMaxY->setValidator( new QDoubleValidator( this ) );
+    // this might generate many refresh events! test..
+    // connect( leHistoMin, SIGNAL( textChanged( const QString & ) ), this, SLOT( updateHistoMarkers() ) );
+    // connect( leHistoMax, SIGNAL( textChanged( const QString & ) ), this, SLOT( updateHistoMarkers() ) );
+    // connect( leHistoMin, SIGNAL( textChanged( const QString & ) ), this, SLOT( applyHistoMin() ) );
+    // connect( leHistoMax, SIGNAL( textChanged( const QString & ) ), this, SLOT( applyHistoMax() ) );
+    connect( leHistoMin, SIGNAL( editingFinished() ), this, SLOT( applyHistoMin() ) );
+    connect( leHistoMax, SIGNAL( editingFinished() ), this, SLOT( applyHistoMax() ) );
+    connect( leHistoMaxY, SIGNAL( editingFinished() ), this, SLOT( applyHistoMaxY() ) );
+    connect( cbxHistoShow, SIGNAL( toggled( bool ) ), this, SLOT( updateHistoMarkers() ) );
+    
+    // histo actions
+    QMenu* menu = new QMenu( this );
+    menu->setSeparatorsCollapsible( false );
+    btnHistoActions->setMenu( menu );
+    QActionGroup* group = new QActionGroup( this );
+    connect( group, SIGNAL( triggered( QAction* ) ), this, SLOT( histoActionTriggered( QAction* ) ) );
+    QAction* action;
+    // action = new QAction( tr( "Load min/max from band" ), group );
+    action = new QAction( tr( "Load min/max" ), group );
+    action->setSeparator( true );
+    menu->addAction( action );
+    action = new QAction( tr( "Actual (slower)" ), group );
+    action->setData( QVariant( "Load actual" ) );
+    menu->addAction( action );
+    action = new QAction( tr( "Estimate (faster)" ), group );
+    action->setData( QVariant( "Load estimate" ) );
+    menu->addAction( action );
+    action = new QAction( tr( "Current extent" ), group );
+    action->setData( QVariant( "Load extent" ) );
+    menu->addAction( action );
+    action = new QAction( tr( "Use 1 stddev" ), group );
+    action->setData( QVariant( "Load 1 stddev" ) );
+    menu->addAction( action );
+    action = new QAction( tr( "Use custom stddev" ), group );
+    action->setData( QVariant( "Load stddev" ) );
+    menu->addAction( action );
+    group = new QActionGroup( this );
+    connect( group, SIGNAL( triggered( QAction* ) ), this, SLOT( histoActionTriggered( QAction* ) ) );
+    action = new QAction( tr( "Render as" ), group );
+    action->setSeparator( true );
+    menu->addAction( action );
+    action = new QAction( tr( "Single band gray" ), group );
+    action->setData( QVariant( "Render single" ) );
+    menu->addAction( action );
+    action = new QAction( tr( "Three band color" ), group );
+    action->setData( QVariant( "Render three" ) );
+    menu->addAction( action );
+
+    QgsDebugMsg("after");
+  }
 
   setWindowTitle( tr( "Layer Properties - %1" ).arg( lyr->name() ) );
+
+  QSettings settings;
+  restoreGeometry( settings.value( "/Windows/RasterLayerProperties/geometry" ).toByteArray() );
+
+  // tabBar->setCurrentIndex( settings.value( "/Windows/RasterLayerProperties/row" ).toInt() );
+  int currentTabIndex = settings.value( "/Windows/RasterLayerProperties/row" ).toInt();
+  // refreshHistogram();
+  // if current tab is disabled, use first tab
+  if ( ! tabBar->widget( currentTabIndex )->isEnabled() )
+    currentTabIndex = 0;
+  // if current tab is histogram, use first tab (to avoid long histogram queries)
+  // there is currently no way to know if there ia a cached histogram
   int myHistogramTab = 6;
-  if ( tabBar->currentIndex() == myHistogramTab )
-  {
-    refreshHistogram();
-  }
+  if ( currentTabIndex == myHistogramTab )
+    currentTabIndex = 0;
+  tabBar->setCurrentIndex( currentTabIndex );
+  
   tableTransparency->horizontalHeader()->setResizeMode( 0, QHeaderView::Stretch );
   tableTransparency->horizontalHeader()->setResizeMode( 1, QHeaderView::Stretch );
+
 } // QgsRasterLayerProperties ctor
 
 
@@ -1877,10 +2012,19 @@ void QgsRasterLayerProperties::on_pbnExportTransparentPixelValues_clicked()
 
 void QgsRasterLayerProperties::on_tabBar_currentChanged( int theTab )
 {
+  QgsDebugMsg(QString("tab = %1").arg(theTab));
   int myHistogramTab = 6;
   if ( theTab == myHistogramTab )
   {
     refreshHistogram();
+  }
+  else
+  {
+    if ( QApplication::overrideCursor() )
+      QApplication::restoreOverrideCursor();
+    btnHistoMin->setChecked( false );
+    btnHistoMax->setChecked( false );
+    btnHistoMaxY->setChecked( false );
   }
 }
 
@@ -1889,7 +2033,8 @@ void QgsRasterLayerProperties::refreshHistogram()
 #if !defined(QWT_VERSION) || QWT_VERSION<0x060000
   mpPlot->clear();
 #endif
-  mHistogramProgress->show();
+  // mHistogramProgress->show();
+  stackedWidget2->setCurrentIndex( 1 );
   connect( mRasterLayer, SIGNAL( progressUpdate( int ) ), mHistogramProgress, SLOT( setValue( int ) ) );
   QApplication::setOverrideCursor( Qt::WaitCursor );
   QgsDebugMsg( "entered." );
@@ -1940,8 +2085,12 @@ void QgsRasterLayerProperties::refreshHistogram()
   //
   // scan through to get counts from layers' histograms
   //
-  float myGlobalMin = 0;
-  float myGlobalMax = 0;
+  // float myGlobalMin = 0;
+  // float myGlobalMax = 0;
+  // float myGlobalMaxY = 0;
+  mHistoMin = 0;
+  mHistoMax = 0;
+  mHistoMaxY = 0;
   bool myFirstIteration = true;
   for ( int myIteratorInt = 1;
         myIteratorInt <= myBandCountInt;
@@ -1968,6 +2117,11 @@ void QgsRasterLayerProperties::refreshHistogram()
       myX2Data.append( double( myBin ) );
       myY2Data.append( double( myBinValue ) );
 #endif
+      // is there a better way to get the max from qwtplot?
+      if ( myFirstIteration || mHistoMaxY < myBinValue )
+      {
+        mHistoMaxY = myBinValue;
+      }
     }
 #if defined(QWT_VERSION) && QWT_VERSION>=0x060000
     mypCurve->setSamples( data );
@@ -1975,13 +2129,13 @@ void QgsRasterLayerProperties::refreshHistogram()
     mypCurve->setData( myX2Data, myY2Data );
 #endif
     mypCurve->attach( mpPlot );
-    if ( myFirstIteration || myGlobalMin < myRasterBandStats.minimumValue )
+    if ( myFirstIteration || mHistoMin < myRasterBandStats.minimumValue )
     {
-      myGlobalMin = myRasterBandStats.minimumValue;
+      mHistoMin = myRasterBandStats.minimumValue;
     }
-    if ( myFirstIteration || myGlobalMax < myRasterBandStats.maximumValue )
+    if ( myFirstIteration || mHistoMax < myRasterBandStats.maximumValue )
     {
-      myGlobalMax = myRasterBandStats.maximumValue;
+      mHistoMax = myRasterBandStats.maximumValue;
     }
     myFirstIteration = false;
   }
@@ -1989,12 +2143,68 @@ void QgsRasterLayerProperties::refreshHistogram()
   // subtract -0.5 to prevent rounding errors
   // see http://www.gdal.org/classGDALRasterBand.html#3f8889607d3b2294f7e0f11181c201c8
   mpPlot->setAxisScale( QwtPlot::xBottom,
-                        myGlobalMin - 0.5,
-                        myGlobalMax + 0.5 );
+                        mHistoMin - 0.5,
+                        mHistoMax + 0.5 );
+
+  // set y axis - should do some error-checking
+  // mHistoMaxYVal = mpPlot->axisScaleDiv( QwtPlot::yLeft )->upperBound();
+  // mHistoMaxYVal = myGlobalMaxY;
+  QgsDebugMsg(QString("set maxy: %1 %2 %3").arg(mHistoMaxY).arg( mpPlot->axisScaleDiv( QwtPlot::xBottom )->upperBound()).arg( mpPlot->axisScaleDiv( QwtPlot::xBottom )->lowerBound()) );
+  if ( leHistoMaxY->text() != "" )
+  {
+    mpPlot->setAxisScale( QwtPlot::yLeft,
+                          0, leHistoMaxY->text().toDouble() ); 
+  }
+
   mpPlot->replot();
+
+  //TMP ET histo
+  updateHistoBandSelection();
+  QgsDebugMsg( "min:["+leHistoMin->text()+"] max:["+leHistoMax->text()+"]");
+  QgsDebugMsg( QString("%1 %2 %3 %4").arg(leHistoMin->text() == "").arg(mHistoMin).arg(leHistoMax->text() == "").arg(mHistoMax));
+  // leHistoMin->setText( QString::number( mHistoMin ) );
+  // if ( leHistoMin->text() == "" )
+  //   leHistoMin->setText( roundedString( mHistoMin, mHistoMin, mHistoMax ) );
+  // if ( leHistoMax->text() == "" )
+  //   leHistoMax->setText( roundedString( mHistoMax, mHistoMin, mHistoMax ) );
+
+  // histo plot markers
+  // memory leak?
+  QgsDebugMsg("creating markers");
+  // QPen linePen = QPen( Qt::black );
+  mHistoMarkerMin = new QwtPlotMarker();
+  // mHistoMarkerMin->setLineStyle(  QwtPlotMarker::VLine );
+  // mHistoMarkerMin->setLinePen( linePen );
+  mHistoMarkerMin->attach( mpPlot );
+  mHistoMarkerMax = new QwtPlotMarker();
+  // mHistoMarkerMax->setLineStyle(  QwtPlotMarker::VLine );
+  // mHistoMarkerMax->setLinePen( linePen );
+  mHistoMarkerMax->attach( mpPlot );
+  QgsDebugMsg( QString(" %1 %2 %3" ).arg(!cbxHistoShow->isChecked()).arg(mHistoMarkerMin==0).arg(mHistoMarkerMax==0) );
+  updateHistoMarkers();
+  // }
+  // mHistoMarkerMin.attach( mpPlot );
+  // mHistoMarkerMax.attach( mpPlot );
+  // updateHistoMarkers();
+
+  // histo picker
+  mHistoPicker = new QwtPlotPicker( mpPlot->canvas() );
+  // mHistoPicker->setStateMachine(new QwtPickerDragRectMachine);
+  // mHistoPicker->setStateMachine(new QwtPickerClickPointMachine);
+  // mHistoPicker->setStateMachine( new QwtPickerMachine( QwtPickerMachine::PointSelection ) );
+  connect(mHistoPicker, SIGNAL( selected(const QwtDoublePoint &) ), this, SLOT( histoPickerSelected( const QwtDoublePoint & ) ) );
+  mHistoPicker->setSelectionFlags( QwtPicker::PointSelection | QwtPicker::ClickSelection);
+  // mHistoPicker->setStateMachine(new QwtPickerDragRectMachine);
+  mHistoPicker->setTrackerMode( QwtPicker::ActiveOnly );
+  // mHistoPicker->setTrackerMode( QwtPicker::AlwaysOn );
+  mHistoPicker->setRubberBand( QwtPicker::VLineRubberBand );
+  mHistoPicker->setEnabled( false );
+
   disconnect( mRasterLayer, SIGNAL( progressUpdate( int ) ), mHistogramProgress, SLOT( setValue( int ) ) );
-  mHistogramProgress->hide();
+  // mHistogramProgress->hide();
+  stackedWidget2->setCurrentIndex( 0 );
   mpPlot->canvas()->setCursor( Qt::ArrowCursor );
+  // on_cboHistoBand_currentIndexChanged( -1 );
   QApplication::restoreOverrideCursor();
 }
 
@@ -2182,6 +2392,7 @@ void QgsRasterLayerProperties::on_rbtnSingleBand_toggled( bool theState )
     {
       cboGray->setCurrentIndex( 0 );
     }
+
   }
   else if ( !rbtnThreeBand->isEnabled() )
   {
@@ -2208,6 +2419,8 @@ void QgsRasterLayerProperties::on_rbtnSingleBandStdDev_toggled( bool theState )
 
 void QgsRasterLayerProperties::on_rbtnThreeBand_toggled( bool theState )
 {
+  QgsDebugMsg(QString("Entered, state = %1").arg(theState));
+
   if ( theState )
   {
     //--- enable and disable appropriate controls
@@ -2267,6 +2480,7 @@ void QgsRasterLayerProperties::on_rbtnThreeBand_toggled( bool theState )
 
     // Populate transparency table with single value transparency pixels
     populateTransparencyTable();
+
   }
   else if ( !rbtnSingleBand->isEnabled() )
   {
@@ -3037,3 +3251,381 @@ void QgsRasterLayerProperties::toggleBuildPyramidsButton()
   }
 }
 
+// TMP ET histo
+void QgsRasterLayerProperties::on_cboHistoBand_currentIndexChanged( int bandNo )
+{
+  if ( mHistoPicker != 0 )
+    mHistoPicker->setEnabled( false );
+  btnHistoMin->setEnabled( true );
+  btnHistoMax->setEnabled( true );
+
+  bandNo = cboHistoBand->currentIndex();
+  QgsDebugMsg(QString("band = %1 )").arg( bandNo ));
+  switch ( bandNo )
+  {
+    case 0:
+      leHistoMin->setText( leGrayMin->text() );
+      leHistoMax->setText( leGrayMax->text() );
+      break;
+    case 1:
+      leHistoMin->setText( leRedMin->text() );
+      leHistoMax->setText( leRedMax->text() );
+     break;
+    case 2:
+      leHistoMin->setText( leGreenMin->text() );
+      leHistoMax->setText( leGreenMax->text() );
+     break;
+    case 3:
+      leHistoMin->setText( leBlueMin->text() );
+      leHistoMax->setText( leBlueMax->text() );
+     break;    
+  }
+  applyHistoMin();
+  applyHistoMax();
+}
+
+// void QgsRasterLayerProperties::on_pbtnHistoLoadMinMax_clicked()
+// {
+//   // hack to force actual values computed
+//   rbtnActualMinMax->setChecked( true );
+//   on_pbtnLoadMinMax_clicked();
+//   on_cboHistoBand_currentIndexChanged( -1 );
+// }
+
+void QgsRasterLayerProperties::histoActionTriggered( QAction* action )
+{
+  if ( ! action ) 
+    return;
+  QString data = action->data().toString();
+  QgsDebugMsg( QString("data = %1").arg( data ) );
+  // this approach is a bit of a hack, but we don't have to define slots for each action
+  if ( data == "Load actual" )
+  {
+    rbtnActualMinMax->setChecked( true );
+    on_pbtnLoadMinMax_clicked();
+    on_cboHistoBand_currentIndexChanged( -1 );
+  }
+  else if ( data == "Load estimate" )
+  {
+    rbtnEstimateMinMax->setChecked( true );
+    on_pbtnLoadMinMax_clicked();
+    on_cboHistoBand_currentIndexChanged( -1 );
+  }
+  else if ( data == "Load extent" )
+  {
+    rbtnExtentMinMax->setChecked( true );
+    on_pbtnLoadMinMax_clicked();
+    on_cboHistoBand_currentIndexChanged( -1 );
+  }
+  else if ( data == "Load stddev" ||
+            data == "Load 1 stddev" )
+  {
+    // int theBandNo;
+    QgsRasterBandStats theBandStats;
+    double theStdDev = 1.0;
+    if ( data == "Load stddev" )
+    {
+      if ( cboHistoBand->currentIndex() == 0 )
+        theStdDev = sboxSingleBandStdDev->value();
+      else
+        theStdDev = sboxThreeBandStdDev->value();
+      if ( theStdDev == 0.0 )
+        theStdDev = mDefaultStandardDeviation;
+    }
+    if ( cboHistoBand->currentIndex() == 0 )
+    {
+      rbtnSingleBandMinMax->setChecked( true );
+      theBandStats = mRasterLayer->bandStatistics( mRasterLayer->bandNumber( cboGray->currentText() ) );
+      leGrayMin->setText( QString::number( theBandStats.mean - ( theStdDev * theBandStats.stdDev ) ) );
+      leGrayMax->setText( QString::number( theBandStats.mean + ( theStdDev * theBandStats.stdDev ) ) );
+    }
+    else 
+    {
+      rbtnThreeBandMinMax->setChecked( true );
+      theBandStats = mRasterLayer->bandStatistics( mRasterLayer->bandNumber( cboRed->currentText() ) );
+      leRedMin->setText( QString::number( theBandStats.mean - ( theStdDev * theBandStats.stdDev ) ) );
+      leRedMax->setText( QString::number( theBandStats.mean + ( theStdDev * theBandStats.stdDev ) ) );
+      theBandStats = mRasterLayer->bandStatistics( mRasterLayer->bandNumber( cboGreen->currentText() ) );
+      leGreenMin->setText( QString::number( theBandStats.mean - ( theStdDev * theBandStats.stdDev ) ) );
+      leGreenMax->setText( QString::number( theBandStats.mean + ( theStdDev * theBandStats.stdDev ) ) );
+      theBandStats = mRasterLayer->bandStatistics( mRasterLayer->bandNumber( cboBlue->currentText() ) );
+      leBlueMin->setText( QString::number( theBandStats.mean - ( theStdDev * theBandStats.stdDev ) ) );
+      leBlueMax->setText( QString::number( theBandStats.mean + ( theStdDev * theBandStats.stdDev ) ) );
+    }
+    on_cboHistoBand_currentIndexChanged( -1 );
+  }
+  else if ( data == "Render single" )
+  {
+    rbtnSingleBand->setChecked( true );
+    // refreshHistogram();
+    updateHistoBandSelection();
+  }
+  else if ( data == "Render three" )
+  {
+    rbtnThreeBand->setChecked( true );
+    // refreshHistogram();
+    updateHistoBandSelection();
+  }
+  else
+  {
+    return;
+  }
+}
+
+void QgsRasterLayerProperties::applyHistoMin()
+{
+  QgsDebugMsg( QString("band = %1 )").arg( cboHistoBand->currentIndex() ) );
+  switch ( cboHistoBand->currentIndex() )
+  {
+    case 0:
+      rbtnSingleBandMinMax->setChecked( true );
+      leGrayMin->setText( leHistoMin->text() );
+      break;
+    case 1:
+      rbtnThreeBandMinMax->setChecked( true );
+      leRedMin->setText( leHistoMin->text() );
+     break;
+    case 2:
+      rbtnThreeBandMinMax->setChecked( true );
+      leGreenMin->setText( leHistoMin->text() );
+     break;
+    case 3:
+      rbtnThreeBandMinMax->setChecked( true );
+      leBlueMin->setText( leHistoMin->text() );
+     break;      
+  }
+
+  if ( leHistoMax->text() == "" )
+  {
+    leHistoMax->setText( QString::number( mHistoMax ) );
+    applyHistoMin();
+  }
+
+  updateHistoMarkers();
+}
+
+void QgsRasterLayerProperties::applyHistoMax()
+{
+  QgsDebugMsg( QString("band = %1 )").arg( cboHistoBand->currentIndex() ) );
+  switch ( cboHistoBand->currentIndex() )
+  {
+    case 0:
+      rbtnSingleBandMinMax->setChecked( true );
+      leGrayMax->setText( leHistoMax->text() );
+      break;
+    case 1:
+      rbtnThreeBandMinMax->setChecked( true );
+      leRedMax->setText( leHistoMax->text() );
+     break;
+    case 2:
+      rbtnThreeBandMinMax->setChecked( true );
+      leGreenMax->setText( leHistoMax->text() );
+     break;
+    case 3:
+      rbtnThreeBandMinMax->setChecked( true );
+      leBlueMax->setText( leHistoMax->text() );
+     break;      
+  }
+
+  if ( leHistoMin->text() == "" )
+  {
+    leHistoMin->setText( QString::number( mHistoMin ) );
+    applyHistoMin();
+  }
+  updateHistoMarkers();
+}
+
+void QgsRasterLayerProperties::on_btnHistoMin_clicked()
+{
+  QgsDebugMsg( QString( "enabled: %1" ).arg( btnHistoMin->isChecked() ) );
+  if ( QApplication::overrideCursor() )
+    QApplication::restoreOverrideCursor();
+  if ( btnHistoMin->isChecked() )
+  {
+    btnHistoMax->setChecked( false );
+    btnHistoMaxY->setChecked( false );
+    // QApplication::setOverrideCursor( QCursor( QgisApp::getThemeIcon( "/mIconTouch2.png" ) ) );  
+    QApplication::setOverrideCursor( Qt::PointingHandCursor );  
+  }
+
+  if ( mpPlot != NULL && mHistoPicker != NULL )
+    mHistoPicker->setEnabled( btnHistoMin->isChecked() );
+}
+
+void QgsRasterLayerProperties::on_btnHistoMax_clicked()
+{
+  // QgsDebugMsg( QString( "enabled: %1" ).arg( btnHistoMax->isChecked() ) );
+  if ( QApplication::overrideCursor() )
+    QApplication::restoreOverrideCursor();
+  if ( btnHistoMax->isChecked() )
+  {
+    btnHistoMin->setChecked( false );
+    btnHistoMaxY->setChecked( false );
+    QApplication::setOverrideCursor( Qt::PointingHandCursor );  
+  }
+  if ( mpPlot != NULL && mHistoPicker != NULL )
+    mHistoPicker->setEnabled( btnHistoMax->isChecked() );
+}
+
+void QgsRasterLayerProperties::on_btnHistoMaxY_clicked()
+{
+  // QgsDebugMsg( QString( "enabled: %1" ).arg( btnHistoMaxY->isChecked() ) );
+  if ( QApplication::overrideCursor() )
+    QApplication::restoreOverrideCursor();
+  if ( btnHistoMaxY->isChecked() )
+  {
+    btnHistoMin->setChecked( false );
+    btnHistoMax->setChecked( false );
+    QApplication::setOverrideCursor( Qt::PointingHandCursor );  
+  }
+  if ( mpPlot != NULL && mHistoPicker != NULL )
+    mHistoPicker->setEnabled( btnHistoMaxY->isChecked() );
+}
+
+void QgsRasterLayerProperties::histoPickerSelected( const QwtDoublePoint & pos )
+{
+  QgsDebugMsg( QString("selected %1 %2").arg(pos.x()).arg(pos.y()) ); 
+  if ( btnHistoMin->isChecked() )
+  {
+    // leHistoMin->setText( QString::number( pos.x() ) );
+    // leHistoMin->setText( roundedString( pos.x(), mHistoMin, mHistoMax ) );
+    leHistoMin->setText( findClosestTickVal( pos.x(), mpPlot->axisScaleDiv( QwtPlot::xBottom ) ) );
+    applyHistoMin();
+    btnHistoMin->setChecked( false );
+  }
+  else if ( btnHistoMax->isChecked() )
+  {
+    // leHistoMax->setText( QString::number( pos.x() ) );
+    // leHistoMin->setText( roundedString( pos.x(), mHistoMin, mHistoMax ) );
+    leHistoMax->setText( findClosestTickVal( pos.x(), mpPlot->axisScaleDiv( QwtPlot::xBottom ) ) );
+    applyHistoMax();
+    btnHistoMax->setChecked( false );
+  }
+  else if ( btnHistoMaxY->isChecked() )
+  {
+    // leHistoMaxY->setText( QString::number( pos.y() ) );
+    // leHistoMaxY->setText( roundedString( pos.y(), 0, mHistoMaxY ) );
+    leHistoMaxY->setText( findClosestTickVal( pos.y(), mpPlot->axisScaleDiv( QwtPlot::yLeft ) ) );
+    applyHistoMaxY();
+    btnHistoMaxY->setChecked( false );
+  }
+}
+
+void QgsRasterLayerProperties::updateHistoMarkers( )
+{
+  QgsDebugMsg( QString(" %1 %2 %3" ).arg(!cbxHistoShow->isChecked()).arg(mHistoMarkerMin==NULL).arg(mHistoMarkerMax==NULL) );
+
+  // todo error checking
+  if ( mpPlot==NULL || mHistoMarkerMin==NULL || mHistoMarkerMax==NULL )
+    return;
+
+  if ( ! cbxHistoShow->isChecked() )
+  {
+    mHistoMarkerMin->hide();
+    mHistoMarkerMax->hide();
+    mpPlot->replot();
+    return;
+  }
+
+  int bandNo = cboHistoBand->currentIndex();
+  QColor penColor;
+  double minVal = mpPlot->axisScaleDiv( QwtPlot::xBottom )->lowerBound() + 0.5;
+  double maxVal = mpPlot->axisScaleDiv( QwtPlot::xBottom )->upperBound() - 0.5;
+  QString minStr = leHistoMin->text();
+  QString maxStr = leHistoMax->text();
+  if ( minStr != "" )
+    minVal = minStr.toDouble();
+  if ( maxStr != "" )
+    maxVal = maxStr.toDouble();
+  
+  QgsDebugMsg(QString("band = %1 minStr = %2 maxStr = %3 minVal = %4 maxVal = %5)").arg( bandNo ).arg( minStr ).arg( maxStr ).arg( minVal ).arg( maxVal ));
+  switch ( bandNo )
+  {
+    case 0:
+      penColor = Qt::black;
+      break;
+    case 1:
+      penColor = Qt::red;
+      break;
+    case 2:
+      penColor = Qt::green;
+      break;
+    case 3:
+      penColor = Qt::blue;
+      break;
+  }
+  QgsDebugMsg(QString("style: %1 min: %2 max: %3").arg(mHistoMarkerMin->lineStyle()).arg(minVal).arg(maxVal));
+  QPen linePen = QPen( penColor );
+  // linePen.setWidth( 3 );
+  linePen.setStyle( Qt::DashLine );
+  mHistoMarkerMin->setLineStyle( QwtPlotMarker::VLine );
+  mHistoMarkerMin->setLinePen( linePen );
+  mHistoMarkerMin->setXValue( minVal );    
+  mHistoMarkerMin->show();
+  mHistoMarkerMax->setLineStyle( QwtPlotMarker::VLine );
+  mHistoMarkerMax->setLinePen( linePen );
+  mHistoMarkerMax->setXValue( maxVal );
+  mHistoMarkerMax->show();
+  
+  mpPlot->replot();
+
+}
+
+void QgsRasterLayerProperties::updateHistoBandSelection()
+{
+    // TMP ET histo
+    // enable / disable cboHistoBand items
+  if ( rbtnSingleBand->isChecked() )
+  {
+    QVariant vd(0), ve(1 | 32); //magick disabled/enabled flags
+    QModelIndex index = cboHistoBand->model()->index(0,0); 
+    cboHistoBand->model()->setData( index, ve, Qt::UserRole -1);
+    for ( int i=1; i<4; i++ )
+    {
+      index = cboHistoBand->model()->index(i,0); 
+      cboHistoBand->model()->setData( index, vd, Qt::UserRole -1);
+    }
+    if ( cboHistoBand->currentIndex() != 0 )
+      cboHistoBand->setCurrentIndex( 0 );
+  }
+  else if ( rbtnThreeBand->isChecked() )
+  {
+    QgsDebugMsg("set index 1");
+    QVariant vd(0), ve(1 | 32); //magick disabled/enabled flags
+    QModelIndex index = cboHistoBand->model()->index(0,0); 
+    cboHistoBand->model()->setData( index, vd, Qt::UserRole -1);
+    for ( int i=1; i<4; i++ )
+    {
+      index = cboHistoBand->model()->index(i,0); 
+      cboHistoBand->model()->setData( index, ve, Qt::UserRole -1);
+    }
+    if ( cboHistoBand->currentIndex() == 0 )
+      cboHistoBand->setCurrentIndex( 1 );
+  }
+
+}
+
+void QgsRasterLayerProperties::applyHistoMaxY( )
+{
+  double val;
+  if ( leHistoMaxY->text() != "" )
+    val = leHistoMaxY->text().toDouble();
+  else 
+    val = mHistoMaxY;
+  QgsDebugMsg(QString("text: %1 val: %2 maxy: %3").arg(leHistoMaxY->text()).arg(val).arg(mHistoMaxY));
+  mpPlot->setAxisScale( QwtPlot::yLeft,
+                        0, val ); 
+  mpPlot->replot();
+}
+
+void QgsRasterLayerProperties::on_btnHistoReset_clicked( )
+{
+  leHistoMin->setText( QString::number( mHistoMin ) );
+  leHistoMax->setText( QString::number( mHistoMax ) );
+  // leHistoMin->setText( roundedString( mHistoMin, mHistoMin, mHistoMax ) );
+  // leHistoMax->setText( roundedString( mHistoMax, mHistoMin, mHistoMax ) );
+  leHistoMaxY->setText("");
+  applyHistoMin();
+  applyHistoMax();
+  applyHistoMaxY();
+}

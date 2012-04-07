@@ -1326,7 +1326,7 @@ void QgsGdalProvider::populateHistogram( int theBandNo,   QgsRasterBandStats & t
       else
       {
         theBandStats.histogramVector->push_back( myHistogramArray[myBin] );
-        QgsDebugMsg( "Added " + QString::number( myHistogramArray[myBin] ) + " to histogram vector" );
+        // QgsDebugMsg( "Added " + QString::number( myHistogramArray[myBin] ) + " to histogram vector" );
       }
     }
 

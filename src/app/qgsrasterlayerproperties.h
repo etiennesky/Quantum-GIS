@@ -29,6 +29,8 @@ class QgsMapLayer;
 class QgsMapCanvas;
 class QgsRasterLayer;
 class QgsMapToolEmitPoint;
+class QwtPlotPicker;
+class QwtPlotMarker;
 
 /**Property sheet for a raster map layer
   *@author Tim Sutton
@@ -148,6 +150,23 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
     /**Enable or disable Build pyramids button depending on selection in pyramids list*/
     void toggleBuildPyramidsButton();
 
+    /* TMP ET */
+    void on_cboHistoBand_currentIndexChanged( int );
+    /* void on_pbtnHistoLoadMinMax_clicked(); */
+    /* void on_btnHistoApply_clicked(); */
+    void applyHistoMin();
+    void applyHistoMax();
+    void applyHistoMaxY();
+    void on_btnHistoMin_clicked(); 
+    void on_btnHistoMax_clicked(); 
+    void on_btnHistoMaxY_clicked(); 
+    void histoActionTriggered( QAction* );
+    void histoPickerSelected( const QwtDoublePoint & );
+    /* void histoPickerMoved( const QPoint & ); */
+    void updateHistoMarkers();
+    void updateHistoBandSelection();
+    void on_btnHistoReset_clicked();
+
   signals:
     /** emitted when changes to layer were saved to update legend */
     void refreshLegend( QString layerID, bool expandItem );
@@ -213,5 +232,13 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
 
     QgsMapCanvas* mMapCanvas;
     QgsMapToolEmitPoint* mPixelSelectorTool;
+
+    //TMP ET histo
+    QwtPlotPicker* mHistoPicker;
+    QwtPlotMarker* mHistoMarkerMin;
+    QwtPlotMarker* mHistoMarkerMax;
+    double mHistoMin;
+    double mHistoMax;
+    double mHistoMaxY;
 };
 #endif

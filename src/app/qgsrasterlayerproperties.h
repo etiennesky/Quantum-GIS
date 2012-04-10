@@ -31,6 +31,7 @@ class QgsRasterLayer;
 class QgsMapToolEmitPoint;
 class QwtPlotPicker;
 class QwtPlotMarker;
+class QwtPlotZoomer;
 
 /**Property sheet for a raster map layer
   *@author Tim Sutton
@@ -156,15 +157,12 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
     /* void on_btnHistoApply_clicked(); */
     void applyHistoMin();
     void applyHistoMax();
-    void applyHistoMaxY();
-    void on_btnHistoMin_clicked(); 
-    void on_btnHistoMax_clicked(); 
-    void on_btnHistoMaxY_clicked(); 
+    void on_btnHistoMin_toggled(); 
+    void on_btnHistoMax_toggled(); 
     void histoActionTriggered( QAction* );
     void histoPickerSelected( const QwtDoublePoint & );
     /* void histoPickerMoved( const QPoint & ); */
     void updateHistoMarkers();
-    void updateHistoBandSelection();
     void on_btnHistoReset_clicked();
 
   signals:
@@ -235,10 +233,11 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
 
     //TMP ET histo
     QwtPlotPicker* mHistoPicker;
+    QwtPlotZoomer* mHistoZoomer;
     QwtPlotMarker* mHistoMarkerMin;
     QwtPlotMarker* mHistoMarkerMax;
     double mHistoMin;
     double mHistoMax;
-    double mHistoMaxY;
+    QList<QColor> mHistoColors;
 };
 #endif

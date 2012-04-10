@@ -15,8 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff/>
-   </iconset>
+    <normaloff>../../../../../../home/tourigny/.designer/backup</normaloff>../../../../../../home/tourigny/.designer/backup</iconset>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -570,7 +569,7 @@
                       </property>
                       <property name="icon">
                        <iconset>
-                        <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
+                        <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</iconset>
                       </property>
                      </widget>
                     </item>
@@ -591,7 +590,7 @@
                       </property>
                       <property name="icon">
                        <iconset>
-                        <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
+                        <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</iconset>
                       </property>
                      </widget>
                     </item>
@@ -954,7 +953,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
+                  <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1128,7 +1127,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../images/themes/default/mActionNewAttribute.png</normaloff>../../images/themes/default/mActionNewAttribute.png</iconset>
+              <normaloff>../../../../../../home/tourigny/images/themes/default/mActionNewAttribute.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionNewAttribute.png</iconset>
             </property>
            </widget>
           </item>
@@ -1142,7 +1141,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../images/themes/default/mActionFolder.png</normaloff>../../images/themes/default/mActionFolder.png</iconset>
+              <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFolder.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFolder.png</iconset>
             </property>
            </widget>
           </item>
@@ -1156,7 +1155,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
+              <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</iconset>
             </property>
            </widget>
           </item>
@@ -1419,7 +1418,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionNewAttribute.png</normaloff>../../images/themes/default/mActionNewAttribute.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionNewAttribute.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionNewAttribute.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1436,7 +1435,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionContextHelp.png</normaloff>../../images/themes/default/mActionContextHelp.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionContextHelp.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionContextHelp.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1450,7 +1449,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionDeleteAttribute.png</normaloff>../../images/themes/default/mActionDeleteAttribute.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionDeleteAttribute.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionDeleteAttribute.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1464,7 +1463,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionCopySelected.png</normaloff>../../images/themes/default/mActionCopySelected.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionCopySelected.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionCopySelected.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1491,7 +1490,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFileSave.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1505,7 +1504,7 @@
                   </property>
                   <property name="icon">
                    <iconset>
-                    <normaloff>../../images/themes/default/mActionFolder.png</normaloff>../../images/themes/default/mActionFolder.png</iconset>
+                    <normaloff>../../../../../../home/tourigny/images/themes/default/mActionFolder.png</normaloff>../../../../../../home/tourigny/images/themes/default/mActionFolder.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1915,6 +1914,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border=&quot;0&quot; style=&quot;-qt-table-type: root; margin-top:4px; margin-bottom:4px; margin-left:4px; margin-right:4px;&quot;&gt;
 &lt;tr&gt;
 &lt;td style=&quot;border: none;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Droid Sans';&quot;&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;/p&gt;
@@ -2022,7 +2022,7 @@ p, li { white-space: pre-wrap; }
        <item row="1" column="0" colspan="2">
         <widget class="QwtPlot" name="mpPlot"/>
        </item>
-       <item row="2" column="1">
+       <item row="2" column="0" colspan="2">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -2059,15 +2059,24 @@ p, li { white-space: pre-wrap; }
              <property name="frameShape">
               <enum>QFrame::StyledPanel</enum>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_7">
               <property name="spacing">
-               <number>2</number>
+               <number>5</number>
               </property>
               <property name="sizeConstraint">
                <enum>QLayout::SetDefaultConstraint</enum>
               </property>
-              <property name="margin">
-               <number>0</number>
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>1</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>1</number>
               </property>
               <item>
                <widget class="QToolButton" name="btnHistoActions">
@@ -2099,7 +2108,7 @@ p, li { white-space: pre-wrap; }
                 </property>
                 <property name="icon">
                  <iconset resource="../../images/images.qrc">
-                  <normaloff>:/images/themes/default/mActionDraw.png</normaloff>:/images/themes/default/mActionDraw.png</iconset>
+                  <normaloff>:/images/themes/default/mActionRefresh.png</normaloff>:/images/themes/default/mActionRefresh.png</iconset>
                 </property>
                 <property name="autoRaise">
                  <bool>true</bool>
@@ -2112,7 +2121,7 @@ p, li { white-space: pre-wrap; }
                  <string>Show Min and Max on plot</string>
                 </property>
                 <property name="text">
-                 <string>Show</string>
+                 <string>Show Min/Max</string>
                 </property>
                 <property name="checked">
                  <bool>false</bool>
@@ -2129,7 +2138,7 @@ p, li { white-space: pre-wrap; }
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
-                  <width>10</width>
+                  <width>5</width>
                   <height>1</height>
                  </size>
                 </property>
@@ -2137,6 +2146,12 @@ p, li { white-space: pre-wrap; }
               </item>
               <item>
                <widget class="Line" name="line_5">
+                <property name="frameShadow">
+                 <enum>QFrame::Sunken</enum>
+                </property>
+                <property name="lineWidth">
+                 <number>1</number>
+                </property>
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
@@ -2195,26 +2210,6 @@ p, li { white-space: pre-wrap; }
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <item>
-                 <property name="text">
-                  <string>Single</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Red</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Green</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Blue</string>
-                 </property>
-                </item>
                </widget>
               </item>
               <item>
@@ -2234,56 +2229,63 @@ p, li { white-space: pre-wrap; }
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="label_7">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
+               <layout class="QHBoxLayout" name="horizontalLayout_3">
+                <property name="spacing">
+                 <number>1</number>
                 </property>
-                <property name="text">
-                 <string>Min:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="leHistoMin">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>50</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnHistoMin">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="toolTip">
-                 <string>Pick Min value on graph</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="../../images/images.qrc">
-                  <normaloff>:/images/themes/default/mActionTouch2.png</normaloff>:/images/themes/default/mActionTouch2.png</iconset>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
+                <item>
+                 <widget class="QLabel" name="label_7">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Min:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="leHistoMin">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>50</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnHistoMin">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Pick Min value on graph</string>
+                  </property>
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../../images/images.qrc">
+                    <normaloff>:/images/themes/default/mActionTouch2.png</normaloff>:/images/themes/default/mActionTouch2.png</iconset>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="autoRaise">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
               <item>
                <spacer name="horizontalSpacer_6">
@@ -2302,72 +2304,63 @@ p, li { white-space: pre-wrap; }
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="label_8">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <property name="spacing">
+                 <number>1</number>
                 </property>
-                <property name="text">
-                 <string>Max:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="leHistoMax">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>50</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnHistoMax">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="toolTip">
-                 <string>Pick Max value on graph</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="../../images/images.qrc">
-                  <normaloff>:/images/themes/default/mActionTouch2.png</normaloff>:/images/themes/default/mActionTouch2.png</iconset>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_7">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>5</width>
-                  <height>1</height>
-                 </size>
-                </property>
-               </spacer>
+                <item>
+                 <widget class="QLabel" name="label_8">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Max:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="leHistoMax">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>50</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="btnHistoMax">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Pick Max value on graph</string>
+                  </property>
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../../images/images.qrc">
+                    <normaloff>:/images/themes/default/mActionTouch2.png</normaloff>:/images/themes/default/mActionTouch2.png</iconset>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="autoRaise">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
               <item>
                <spacer name="horizontalSpacer_8">
@@ -2382,116 +2375,37 @@ p, li { white-space: pre-wrap; }
                 </property>
                </spacer>
               </item>
-              <item>
-               <widget class="Line" name="line_2">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_10">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::MinimumExpanding</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>5</width>
-                  <height>1</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_9">
-                <property name="text">
-                 <string>Y max:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="leHistoMaxY">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>75</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="btnHistoMaxY">
-                <property name="toolTip">
-                 <string>Pick Y max on graph</string>
-                </property>
-                <property name="text">
-                 <string>...</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="../../images/images.qrc">
-                  <normaloff>:/images/themes/default/mActionTouch2.png</normaloff>:/images/themes/default/mActionTouch2.png</iconset>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="autoRaise">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>5</width>
-                  <height>1</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="Line" name="line_3">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QToolButton" name="mSaveAsImageButton">
-                <property name="toolTip">
-                 <string>Save plot</string>
-                </property>
-                <property name="text">
-                 <string>Save as image...</string>
-                </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>../../images/themes/default/mActionFileSave.png</normaloff>../../images/themes/default/mActionFileSave.png</iconset>
-                </property>
-               </widget>
-              </item>
              </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>10</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QToolButton" name="mSaveAsImageButton">
+             <property name="toolTip">
+              <string>Save plot</string>
+             </property>
+             <property name="text">
+              <string>Save as image...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../../images/images.qrc">
+               <normaloff>:/images/themes/default/mActionFileSave.png</normaloff>:/images/themes/default/mActionFileSave.png</iconset>
+             </property>
             </widget>
            </item>
           </layout>

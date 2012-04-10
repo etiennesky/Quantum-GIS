@@ -157,8 +157,8 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
     /* void on_btnHistoApply_clicked(); */
     void applyHistoMin();
     void applyHistoMax();
-    void on_btnHistoMin_toggled(); 
-    void on_btnHistoMax_toggled(); 
+    void on_btnHistoMin_toggled();
+    void on_btnHistoMax_toggled();
     void histoActionTriggered( QAction* );
     void histoPickerSelected( const QwtDoublePoint & );
     /* void histoPickerMoved( const QPoint & ); */
@@ -238,6 +238,6 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
     QwtPlotMarker* mHistoMarkerMax;
     double mHistoMin;
     double mHistoMax;
-    QList<QColor> mHistoColors;
+    QVector<QColor> mHistoColors;
 };
 #endif

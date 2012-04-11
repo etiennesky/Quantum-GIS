@@ -6,8 +6,9 @@
 
 class QgsBrowserModel;
 class QModelIndex;
-class QTreeView;
+class QgsBrowserTreeView;
 class QgsLayerItem;
+class QgsDataItem;
 class QgsBrowserTreeFilterProxyModel;
 
 class QgsBrowserDockWidget : public QDockWidget, private Ui::QgsBrowserDockWidgetBase
@@ -28,10 +29,10 @@ class QgsBrowserDockWidget : public QDockWidget, private Ui::QgsBrowserDockWidge
     void refresh();
 
     void showFilterWidget( bool visible );
-    void setFilterSyntax(QAction *);
+    void setFilterSyntax( QAction * );
     void setFilter();
     void clearFilter();
- 
+
     // layer menu items
     void addCurrentLayer();
     void addSelectedLayers();
@@ -45,7 +46,8 @@ class QgsBrowserDockWidget : public QDockWidget, private Ui::QgsBrowserDockWidge
 
     void addLayer( QgsLayerItem *layerItem );
 
-    QTreeView* mBrowserView;
+    QgsDataItem* dataItem( const QModelIndex& index );
+    QgsBrowserTreeView* mBrowserView;
     QgsBrowserModel* mModel;
     QgsBrowserTreeFilterProxyModel* mProxyModel;
 };

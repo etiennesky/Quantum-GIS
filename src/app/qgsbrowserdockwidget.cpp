@@ -18,6 +18,8 @@
 #include "qgsapplication.h"
 #include "qgsmapcanvas.h"
 #include <ui_qgsbrowserlayerpropertiesbase.h>
+#include <ui_qgsbrowserdirectorypropertiesbase.h>
+
 
 #include <QDragEnterEvent>
 /**
@@ -307,6 +309,7 @@ void QgsBrowserDockWidget::showContextMenu( const QPoint & pt )
       // only favourites can be removed
       menu->addAction( tr( "Remove favourite" ), this, SLOT( removeFavourite() ) );
     }
+    menu->addAction( tr( "Properties" ), this, SLOT( showProperties( ) ) );
   }
 
   else if ( item->type() == QgsDataItem::Layer )
@@ -507,8 +510,10 @@ void QgsBrowserDockWidget::showProperties( )
   QgsDebugMsg( "Entered" );
   QModelIndex index = mBrowserView->currentIndex();
   QgsDataItem* item = dataItem( index );
+  if ( ! item )
+    return;
 
-  if ( item != NULL && item->type() == QgsDataItem::Layer )
+  if ( item->type() == QgsDataItem::Layer )
   {
     QgsLayerItem *layerItem = qobject_cast<QgsLayerItem*>( item );
     if ( layerItem != NULL )
@@ -584,6 +589,20 @@ void QgsBrowserDockWidget::showProperties( )
 
       dialog->show();
     }
+  }
+  else if ( item->type() == QgsDataItem::Directory )
+  {
+    // initialize dialog
+    QDialog *dialog = new QDialog( this );
+    Ui::QgsBrowserDirectoryPropertiesBase ui;
+    ui.setupUi( dialog );
+
+    dialog->setWindowTitle( tr( "Directory Properties" ) );
+    ui.leSource->setText( item->path() );
+    QgsDirectoryParamWidget *paramWidget = new QgsDirectoryParamWidget( item->path(), dialog );
+    ui.lytWidget->addWidget( paramWidget );
+
+    dialog->show();
   }
 }
 

@@ -2018,6 +2018,22 @@ QPixmap QgsRasterLayer::paletteAsPixmap( int theBandNumber )
  * @param theIgnoreOutOfRangeFlag - whether to ignore values that are out of range (default=true)
  * @param theThoroughBandScanFlag - whether to visit each cell when computing the histogram (default=false)
  */
+bool QgsRasterLayer::hasCachedHistogram( int theBandNo, int theBinCount, bool theIgnoreOutOfRangeFlag, bool theHistogramEstimatedFlag )
+{
+  /* range copied from qgsgdalprovide, perhaps not ok? */
+  QgsRasterBandStats theBandStats = bandStatistics( theBandNo );
+  double myerval = ( theBandStats.maximumValue - theBandStats.minimumValue ) / theBinCount;
+  return mDataProvider->hasCachedHistogram( theBandNo, theBandStats.minimumValue - 0.1*myerval,
+         theBandStats.maximumValue + 0.1*myerval, theBinCount,
+         theIgnoreOutOfRangeFlag, theHistogramEstimatedFlag );
+}
+
+/*
+ * @param theBandNoInt - which band to compute the histogram for
+ * @param theBinCountInt - how many 'bins' to categorise the data into
+ * @param theIgnoreOutOfRangeFlag - whether to ignore values that are out of range (default=true)
+ * @param theThoroughBandScanFlag - whether to visit each cell when computing the histogram (default=false)
+ */
 void QgsRasterLayer::populateHistogram( int theBandNo, int theBinCount, bool theIgnoreOutOfRangeFlag, bool theHistogramEstimatedFlag )
 {
   QgsRasterBandStats myRasterBandStats = bandStatistics( theBandNo );

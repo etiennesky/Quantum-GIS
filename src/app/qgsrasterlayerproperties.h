@@ -152,6 +152,8 @@ class QgsRasterLayerProperties : public QDialog, private Ui::QgsRasterLayerPrope
     void toggleBuildPyramidsButton();
 
     /* TMP ET */
+    void on_btnHistoCompute_clicked();
+    bool computeHistogram( bool forceComputeFlag );
     void on_cboHistoBand_currentIndexChanged( int );
     /* void on_pbtnHistoLoadMinMax_clicked(); */
     /* void on_btnHistoApply_clicked(); */

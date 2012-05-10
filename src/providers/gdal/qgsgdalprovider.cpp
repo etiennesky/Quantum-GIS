@@ -45,6 +45,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
+#include "gdal_pam.h"
 
 
 static QString PROVIDER_KEY = "gdal";
@@ -1275,7 +1276,33 @@ QStringList QgsGdalProvider::subLayers( GDALDatasetH dataset )
   return subLayers;
 }
 
-void QgsGdalProvider::populateHistogram( int theBandNo,   QgsRasterBandStats & theBandStats, int theBinCount, bool theIgnoreOutOfRangeFlag, bool theHistogramEstimatedFlag )
+
+bool QgsGdalProvider::hasCachedHistogram( int theBandNo,
+    double theMinVal, double theMaxVal,
+    int theBinCountInt,
+    bool theIgnoreOutOfRangeFlag,
+    bool theThoroughBandScanFlag )
+{
+  GDALRasterBandH myGdalBand = GDALGetRasterBand( mGdalDataset, theBandNo );
+  if ( ! myGdalBand )
+    return false;
+
+  GDALPamRasterBand *poPamBand = static_cast<GDALPamRasterBand*>( myGdalBand );
+  if ( ! poPamBand || ! poPamBand->GetPamInfo()->psSavedHistograms )
+    return false;
+
+  // make sure PamInitialize() was called...
+  CPLXMLNode *psNode = PamFindMatchingHistogram( poPamBand->GetPamInfo()->psSavedHistograms,
+                       theMinVal, theMaxVal, theBinCountInt,
+                       theIgnoreOutOfRangeFlag,
+                       theThoroughBandScanFlag );
+  if ( psNode )
+    return true;
+
+  return false;
+}
+
+void QgsGdalProvider::populateHistogram( int theBandNo, QgsRasterBandStats & theBandStats, int theBinCount, bool theIgnoreOutOfRangeFlag, bool theHistogramEstimatedFlag )
 {
   GDALRasterBandH myGdalBand = GDALGetRasterBand( mGdalDataset, theBandNo );
   //QgsRasterBandStats myRasterBandStats = bandStatistics( theBandNo );
@@ -1311,10 +1338,11 @@ void QgsGdalProvider::populateHistogram( int theBandNo,   QgsRasterBandStats & t
     myProg.type = ProgressHistogram;
     myProg.provider = this;
     double myerval = ( theBandStats.maximumValue - theBandStats.minimumValue ) / theBinCount;
+
     GDALGetRasterHistogram( myGdalBand, theBandStats.minimumValue - 0.1*myerval,
                             theBandStats.maximumValue + 0.1*myerval, theBinCount, myHistogramArray,
                             theIgnoreOutOfRangeFlag, theHistogramEstimatedFlag, progressCallback,
-                            &myProg ); //this is the arg for our custome gdal progress callback
+                            &myProg ); //this is the arg for our custom gdal progress callback
 
     for ( int myBin = 0; myBin < theBinCount; myBin++ )
     {

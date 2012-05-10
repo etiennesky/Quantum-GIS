@@ -36,8 +36,9 @@
 
 class QgsRasterPyramid;
 
-#define CPL_SUPRESS_CPLUSPLUS
-#include <gdal.h>
+//#define CPL_SUPRESS_CPLUSPLUS
+//#include <gdal.h>
+#include <gdal_priv.h>
 
 #if defined(GDAL_VERSION_NUM) && GDAL_VERSION_NUM >= 1800
 #define TO8F(x) (x).toUtf8().constData()
@@ -242,6 +243,11 @@ class QgsGdalProvider : public QgsRasterDataProvider
     */
     QgsRasterBandStats bandStatistics( int theBandNo );
 
+    bool hasCachedHistogram( int theBandNoInt,
+                             double theMinVal, double theMaxVal,
+                             int theBinCountInt = 256,
+                             bool theIgnoreOutOfRangeFlag = true,
+                             bool theThoroughBandScanFlag = false );
     void populateHistogram( int theBandNoInt,
                             QgsRasterBandStats & theBandStats,
                             int theBinCountInt = 256,

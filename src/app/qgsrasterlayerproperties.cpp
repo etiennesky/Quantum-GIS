@@ -335,8 +335,9 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
     QMenu* menu = new QMenu( this );
     menu->setSeparatorsCollapsible( false );
     btnHistoActions->setMenu( menu );
+    QActionGroup* group;
 
-    QActionGroup* group = new QActionGroup( this );
+    group = new QActionGroup( this );
     group->setExclusive( false );
     connect( group, SIGNAL( triggered( QAction* ) ), this, SLOT( histoActionTriggered( QAction* ) ) );
     QAction* action;
@@ -365,6 +366,7 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
     action->setChecked( true );
     menu->addAction( action );
 
+    menu->addSeparator( );
     group = new QActionGroup( this );
     connect( group, SIGNAL( triggered( QAction* ) ), this, SLOT( histoActionTriggered( QAction* ) ) );
     action = new QAction( tr( "Render as" ), group );
@@ -375,6 +377,12 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
     menu->addAction( action );
     action = new QAction( tr( "Three band color" ), group );
     action->setData( QVariant( "Render three" ) );
+    menu->addAction( action );
+
+    menu->addSeparator( );
+    group = new QActionGroup( this );
+    connect( group, SIGNAL( triggered( QAction* ) ), this, SLOT( histoActionTriggered( QAction* ) ) );
+    action = new QAction( tr( "Compute Histogram" ), group );
     menu->addAction( action );
   }
 
@@ -387,13 +395,10 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
   // if current tab is disabled, use first tab
   if ( ! tabBar->widget( currentTabIndex )->isEnabled() )
     currentTabIndex = 0;
-  // if current tab is histogram, use first tab (to avoid long histogram queries)
-  // as there is currently no way to know if there ia a cached histogram and this might paralyze UI for a long time
+  tabBar->setCurrentIndex( currentTabIndex );
   int myHistogramTab = 6;
   if ( currentTabIndex == myHistogramTab )
-    currentTabIndex = 0;
-  // refreshHistogram();
-  tabBar->setCurrentIndex( currentTabIndex );
+    refreshHistogram();
 
   tableTransparency->horizontalHeader()->setResizeMode( 0, QHeaderView::Stretch );
   tableTransparency->horizontalHeader()->setResizeMode( 1, QHeaderView::Stretch );
@@ -2006,16 +2011,81 @@ void QgsRasterLayerProperties::on_tabBar_currentChanged( int theTab )
   }
 }
 
-void QgsRasterLayerProperties::refreshHistogram()
+void QgsRasterLayerProperties::on_btnHistoCompute_clicked()
 {
-#if !defined(QWT_VERSION) || QWT_VERSION<0x060000
-  mpPlot->clear();
-#endif
-  // mHistogramProgress->show();
+  computeHistogram( true );
+  refreshHistogram();
+}
+
+bool QgsRasterLayerProperties::computeHistogram( bool forceComputeFlag )
+{
+  const int BINCOUNT = 256;
+  bool myIgnoreOutOfRangeFlag = true;
+  bool myThoroughBandScanFlag = false;
+  int myBandCountInt = mRasterLayer->bandCount();
+
+  // if forceComputeFlag = false make sure raster has cached histogram, else return false
+  if ( ! forceComputeFlag )
+  {
+    for ( int myIteratorInt = 1;
+          myIteratorInt <= myBandCountInt;
+          ++myIteratorInt )
+    {
+      if ( ! mRasterLayer->hasCachedHistogram( myIteratorInt, BINCOUNT, myIgnoreOutOfRangeFlag, myThoroughBandScanFlag ) )
+      {
+        QgsDebugMsg( QString( "band %1 does not have cached histo" ).arg( myIteratorInt ) );
+        return false;
+      }
+    }
+  }
+
+  // compute histogram
   stackedWidget2->setCurrentIndex( 1 );
   connect( mRasterLayer, SIGNAL( progressUpdate( int ) ), mHistogramProgress, SLOT( setValue( int ) ) );
   QApplication::setOverrideCursor( Qt::WaitCursor );
+
+  for ( int myIteratorInt = 1;
+        myIteratorInt <= myBandCountInt;
+        ++myIteratorInt )
+  {
+    mRasterLayer->populateHistogram( myIteratorInt, BINCOUNT, myIgnoreOutOfRangeFlag, myThoroughBandScanFlag );
+  }
+
+  disconnect( mRasterLayer, SIGNAL( progressUpdate( int ) ), mHistogramProgress, SLOT( setValue( int ) ) );
+  // mHistogramProgress->hide();
+  stackedWidget2->setCurrentIndex( 0 );
+  QApplication::restoreOverrideCursor();
+
+  return true;
+}
+
+void QgsRasterLayerProperties::refreshHistogram()
+{
+  // Explanation:
+  // We use the gdal histogram creation routine is called for each selected
+  // layer. Currently the hist is hardcoded
+  // to create 256 bins. Each bin stores the total number of cells that
+  // fit into the range defined by that bin.
+  //
+  // The graph routine below determines the greatest number of pixels in any given
+  // bin in all selected layers, and the min. It then draws a scaled line between min
+  // and max - scaled to image height. 1 line drawn per selected band
+  //
+  const int BINCOUNT = 256;
+  int myBandCountInt = mRasterLayer->bandCount();
+
   QgsDebugMsg( "entered." );
+
+  if ( ! computeHistogram( false ) )
+  {
+    QgsDebugMsg( QString( "raster does not have cached histo" ) );
+    stackedWidget2->setCurrentIndex( 2 );
+    return;
+  }
+
+#if !defined(QWT_VERSION) || QWT_VERSION<0x060000
+  mpPlot->clear();
+#endif
   //ensure all children get removed
   mpPlot->setAutoDelete( true );
   mpPlot->setTitle( QObject::tr( "Raster Histogram" ) );
@@ -2028,20 +2098,6 @@ void QgsRasterLayerProperties::refreshHistogram()
   // add a grid
   QwtPlotGrid * myGrid = new QwtPlotGrid();
   myGrid->attach( mpPlot );
-  // Explanation:
-  // We use the gdal histogram creation routine is called for each selected
-  // layer. Currently the hist is hardcoded
-  // to create 256 bins. Each bin stores the total number of cells that
-  // fit into the range defined by that bin.
-  //
-  // The graph routine below determines the greatest number of pixels in any given
-  // bin in all selected layers, and the min. It then draws a scaled line between min
-  // and max - scaled to image height. 1 line drawn per selected band
-  //
-  const int BINCOUNT = 256;
-  bool myIgnoreOutOfRangeFlag = true;
-  bool myThoroughBandScanFlag = false;
-  int myBandCountInt = mRasterLayer->bandCount();
 
   // make colors
   mHistoColors.clear();
@@ -2131,7 +2187,7 @@ void QgsRasterLayerProperties::refreshHistogram()
         ++myIteratorInt )
   {
     QgsRasterBandStats myRasterBandStats = mRasterLayer->bandStatistics( myIteratorInt );
-    mRasterLayer->populateHistogram( myIteratorInt, BINCOUNT, myIgnoreOutOfRangeFlag, myThoroughBandScanFlag );
+    // mRasterLayer->populateHistogram( myIteratorInt, BINCOUNT, myIgnoreOutOfRangeFlag, myThoroughBandScanFlag );
     QwtPlotCurve * mypCurve = new QwtPlotCurve( tr( "Band %1" ).arg( myIteratorInt ) );
     mypCurve->setCurveAttribute( QwtPlotCurve::Fitted );
     mypCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
@@ -2219,12 +2275,8 @@ void QgsRasterLayerProperties::refreshHistogram()
     mHistoZoomer->setEnabled( true );
   }
 
-  disconnect( mRasterLayer, SIGNAL( progressUpdate( int ) ), mHistogramProgress, SLOT( setValue( int ) ) );
-  // mHistogramProgress->hide();
-  stackedWidget2->setCurrentIndex( 0 );
   mpPlot->canvas()->setCursor( Qt::ArrowCursor );
   on_cboHistoBand_currentIndexChanged( -1 );
-  QApplication::restoreOverrideCursor();
 }
 
 void QgsRasterLayerProperties::on_mSaveAsImageButton_clicked()
@@ -3418,6 +3470,10 @@ void QgsRasterLayerProperties::histoActionTriggered( QAction* action )
       applyHistoMin();
       applyHistoMax();
     }
+  }
+  else if ( actionName == "Compute" )
+  {
+    on_btnHistoCompute_clicked();
   }
   else if ( actionName == "Render single" )
   {

@@ -671,6 +671,13 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
                            const QString &  theResamplingMethod = "NEAREST",
                            bool theTryInternalFlag = false );
 
+    /** \brief test if the requested histogram is already available */
+
+    bool hasCachedHistogram( int theBandNoInt,
+                             int theBinCountInt = 256,
+                             bool theIgnoreOutOfRangeFlag = true,
+                             bool theThoroughBandScanFlag = false );
+
     /** \brief Populate the histogram vector for a given band */
 
     void populateHistogram( int theBandNoInt,

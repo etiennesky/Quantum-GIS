@@ -347,6 +347,20 @@ class CORE_EXPORT QgsRasterDataProvider : public QgsDataProvider
       return QStringList();
     }
 
+    /** \brief test if the requested histogram is already available */
+
+    virtual bool hasCachedHistogram( int theBandNoInt,
+                                     double theMinVal, double theMaxVal,
+                                     int theBinCountInt = 256,
+                                     bool theIgnoreOutOfRangeFlag = true,
+                                     bool theThoroughBandScanFlag = false
+                                   )
+    {
+      Q_UNUSED( theBandNoInt ); Q_UNUSED( theMinVal ); Q_UNUSED( theMaxVal );
+      Q_UNUSED( theBinCountInt ); Q_UNUSED( theIgnoreOutOfRangeFlag );
+      Q_UNUSED( theThoroughBandScanFlag ); return false;
+    }
+
     /** \brief Populate the histogram vector for a given band */
 
     virtual void populateHistogram( int theBandNoInt,
@@ -355,7 +369,10 @@ class CORE_EXPORT QgsRasterDataProvider : public QgsDataProvider
                                     bool theIgnoreOutOfRangeFlag = true,
                                     bool theThoroughBandScanFlag = false
                                   )
-    { Q_UNUSED( theBandNoInt ); Q_UNUSED( theBandStats ); Q_UNUSED( theBinCountInt ); Q_UNUSED( theIgnoreOutOfRangeFlag ); Q_UNUSED( theThoroughBandScanFlag ); }
+    {
+      Q_UNUSED( theBandNoInt ); Q_UNUSED( theBandStats ); Q_UNUSED( theBinCountInt );
+      Q_UNUSED( theIgnoreOutOfRangeFlag ); Q_UNUSED( theThoroughBandScanFlag );
+    }
 
     /** \brief Create pyramid overviews */
     virtual QString buildPyramids( const QList<QgsRasterPyramid>  & thePyramidList,

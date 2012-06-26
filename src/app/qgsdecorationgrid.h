@@ -24,6 +24,7 @@
 class QPainter;
 class QgsLineSymbolV2;
 class QgsMarkerSymbolV2;
+class QgsRasterLayer;
 
 #include <QColor>
 #include <QPen>
@@ -133,11 +134,13 @@ class QgsDecorationGrid: public QgsDecorationItem
     bool isDirty();
 
     /**Computes interval that is approx. 1/5 of canvas extent */
-    bool getIntervalFromExtent( double* values, bool useXAxis = true );
+    bool intervalFromExtent( double* values, bool useXAxis = true );
+    /**Gets current raster layer or 0 if none is active or if current layer not a raster */
+    static QgsRasterLayer* currentRasterLayer( bool showErrors = false );
     /**Computes interval from current raster layer */
-    bool getIntervalFromCurrentLayer( double* values );
+    bool intervalFromCurrentLayer( double* values );
 
-    double getDefaultInterval( bool useXAxis = true );
+    double defaultInterval( bool useXAxis = true );
 
   public slots:
     //! set values on the gui when a project is read or the gui first loaded

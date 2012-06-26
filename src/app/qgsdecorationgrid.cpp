@@ -790,7 +790,7 @@ void QgsDecorationGrid::setDirty( bool dirty )
   }
 }
 
-bool QgsDecorationGrid::getIntervalFromExtent( double* values, bool useXAxis )
+bool QgsDecorationGrid::intervalFromExtent( double* values, bool useXAxis )
 {
   // get default interval from current extents
   // calculate a default interval that is approx (extent width)/5 , adjusted so that it is a rounded number
@@ -819,27 +819,38 @@ bool QgsDecorationGrid::getIntervalFromExtent( double* values, bool useXAxis )
   return true;
 }
 
-bool QgsDecorationGrid::getIntervalFromCurrentLayer( double* values )
+QgsRasterLayer* QgsDecorationGrid::currentRasterLayer( bool showErrors )
 {
-  // get current layer and make sure it is a raster layer and CRSs match
   QgsMapLayer* layer = QgisApp::instance()->mapCanvas()->currentLayer();
   if ( ! layer )
   {
-    QMessageBox::warning( 0, tr( "Error" ), tr( "No active layer" ) );
-    return false;
+    if ( showErrors )
+      QMessageBox::warning( 0, tr( "Error" ), tr( "No active layer" ) );
+    return 0;
   }
   if ( layer->type() != QgsMapLayer::RasterLayer )
   {
-    QMessageBox::warning( 0, tr( "Error" ), tr( "Please select a raster layer" ) );
-    return false;
+    if ( showErrors )
+      QMessageBox::warning( 0, tr( "Error" ), tr( "Please select a raster layer" ) );
+    return 0;
   }
   QgsRasterLayer* rlayer = dynamic_cast<QgsRasterLayer*>( layer );
   if ( !rlayer )
   {
-    QMessageBox::warning( 0, tr( "Error" ), tr( "Invalid raster layer" ) );
-    return false;
+    if ( showErrors )
+      QMessageBox::warning( 0, tr( "Error" ), tr( "Invalid raster layer" ) );
+    return 0;
   }
-  const QgsCoordinateReferenceSystem& layerCRS = layer->crs();
+  return rlayer;
+}
+
+bool QgsDecorationGrid::intervalFromCurrentLayer( double* values )
+{
+  QgsRasterLayer* rlayer = currentRasterLayer( true );
+  if ( ! rlayer ) return false;
+
+  // make sure current layer is a raster layer and CRSs match
+  const QgsCoordinateReferenceSystem& layerCRS = rlayer->crs();
   const QgsCoordinateReferenceSystem& mapCRS =
     QgisApp::instance()->mapCanvas()->mapRenderer()->destinationCrs();
   // is this the best way to compare CRS? should we also make sure map has OTF enabled?

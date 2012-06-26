@@ -102,6 +102,8 @@ void QgsDecorationGridDialog::updateGuiElements()
     mMarkerSymbolButton->setIcon( icon );
   }
 
+  mPbtnUpdateFromLayer->setEnabled( QgsDecorationGrid::currentRasterLayer( false ) != 0 );
+
   updateInterval( false );
 
   // blockAllSignals( false );
@@ -260,7 +262,7 @@ void QgsDecorationGridDialog::on_mPbtnUpdateFromExtents_clicked()
 void QgsDecorationGridDialog::on_mPbtnUpdateFromLayer_clicked()
 {
   double values[4];
-  if ( mDeco.getIntervalFromCurrentLayer( values ) )
+  if ( mDeco.intervalFromCurrentLayer( values ) )
   {
     mIntervalXEdit->setText( QString::number( values[0] ) );
     mIntervalYEdit->setText( QString::number( values[1] ) );
@@ -293,7 +295,7 @@ void QgsDecorationGridDialog::updateInterval( bool force )
   if ( force || mDeco.isDirty() )
   {
     double values[4];
-    if ( mDeco.getIntervalFromExtent( values, true ) )
+    if ( mDeco.intervalFromExtent( values, true ) )
     {
       mIntervalXEdit->setText( QString::number( values[0] ) );
       mIntervalYEdit->setText( QString::number( values[1] ) );

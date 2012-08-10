@@ -76,6 +76,9 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WFlags fl ) :
   connect( spinFontSize, SIGNAL( valueChanged( const QString& ) ), this, SLOT( fontSizeChanged( const QString& ) ) );
 
   connect( chkUseStandardDeviation, SIGNAL( stateChanged( int ) ), this, SLOT( toggleStandardDeviation( int ) ) );
+#ifdef Q_WS_X11
+  connect( chkEnableBackbuffer, SIGNAL( stateChanged( int ) ), this, SLOT( toggleEnableBackbuffer( int ) ) );
+#endif
 
   connect( this, SIGNAL( accepted() ), this, SLOT( saveOptions() ) );
 
@@ -226,6 +229,21 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WFlags fl ) :
   index = cmbScanZipInBrowser->findData( settings.value( "/qgis/scanZipInBrowser", "" ) );
   if ( index == -1 ) index = 1;
   cmbScanZipInBrowser->setCurrentIndex( index );
+
+  // Set the enable backbuffer state for X11 (linux) systems only
+  // TODO: remove this when threading is implemented
+#ifdef Q_WS_X11
+  chkEnableBackbuffer->setChecked( settings.value( "/Map/enableBackbuffer", 1 ).toBool() );
+  toggleEnableBackbuffer( chkEnableBackbuffer->checkState() );
+#elif defined(Q_WS_MAC)
+  chkEnableBackbuffer->setChecked( true );
+  chkEnableBackbuffer->setEnabled( false );
+  labelUpdateThreshold->setEnabled( false );
+  spinBoxUpdateThreshold->setEnabled( false );
+#else // Q_WS_WIN32
+  chkEnableBackbuffer->setChecked( true );
+  chkEnableBackbuffer->setEnabled( false );
+#endif
 
   // set the display update threshold
   spinBoxUpdateThreshold->setValue( settings.value( "/Map/updateThreshold" ).toInt() );
@@ -720,6 +738,24 @@ void QgsOptions::toggleStandardDeviation( int state )
   }
 }
 
+void QgsOptions::toggleEnableBackbuffer( int state )
+{
+#ifdef Q_WS_X11
+  if ( Qt::Checked == state )
+  {
+    labelUpdateThreshold->setEnabled( false );
+    spinBoxUpdateThreshold->setEnabled( false );
+  }
+  else
+  {
+    labelUpdateThreshold->setEnabled( true );
+    spinBoxUpdateThreshold->setEnabled( true );
+  }
+#else
+  Q_UNUSED( state );
+#endif
+}
+
 QString QgsOptions::theme()
 {
   // returns the current theme (as selected in the cmbTheme combo box)
@@ -891,6 +927,7 @@ void QgsOptions::saveOptions()
   settings.setValue( "/Raster/cumulativeCutLower", mRasterCumulativeCutLowerDoubleSpinBox->value() / 100.0 );
   settings.setValue( "/Raster/cumulativeCutUpper", mRasterCumulativeCutUpperDoubleSpinBox->value() / 100.0 );
 
+  settings.setValue( "/Map/enableBackbuffer", chkEnableBackbuffer->isChecked() );
   settings.setValue( "/Map/updateThreshold", spinBoxUpdateThreshold->value() );
   //check behaviour so default projection when new layer is added with no
   //projection defined...

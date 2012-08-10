@@ -22,10 +22,10 @@
 #include <qgsvectordataprovider.h>
 #include <qgsmaplayerregistry.h>
 
-#include "qgspallabeling.h"
 #include "qgslabelengineconfigdialog.h"
 #include "qgsexpressionbuilderdialog.h"
 #include "qgsexpression.h"
+#include "qgsmapcanvas.h"
 
 #include <QColorDialog>
 #include <QFontDialog>
@@ -34,15 +34,13 @@
 #include <QMessageBox>
 #include <QSettings>
 
+
 QgsLabelingGui::QgsLabelingGui( QgsPalLabeling* lbl, QgsVectorLayer* layer, QgsMapCanvas* mapCanvas, QWidget* parent )
-    : QDialog( parent ), mLBL( lbl ), mLayer( layer ), mMapCanvas( mapCanvas )
+    : QWidget( parent ), mLBL( lbl ), mLayer( layer ), mMapCanvas( mapCanvas )
 {
   if ( !layer ) return;
 
   setupUi( this );
-
-  QSettings settings;
-  restoreGeometry( settings.value( "/Windows/Labeling/geometry" ).toByteArray() );
 
   connect( btnTextColor, SIGNAL( clicked() ), this, SLOT( changeTextColor() ) );
   connect( btnChangeFont, SIGNAL( clicked() ), this, SLOT( changeTextFont() ) );
@@ -142,6 +140,7 @@ QgsLabelingGui::QgsLabelingGui( QgsPalLabeling* lbl, QgsVectorLayer* layer, QgsM
   mMinSizeSpinBox->setValue( lyr.minFeatureSize );
   chkAddDirectionSymbol->setChecked( lyr.addDirectionSymbol );
   wrapCharacterEdit->setText( lyr.wrapChar );
+  chkPreserveRotation->setChecked( lyr.preserveRotation );
 
   bool scaleBased = ( lyr.scaleMin != 0 && lyr.scaleMax != 0 );
   chkScaleBasedVisibility->setChecked( scaleBased );
@@ -206,13 +205,10 @@ QgsLabelingGui::QgsLabelingGui( QgsPalLabeling* lbl, QgsVectorLayer* layer, QgsM
   {
     connect( placementRadios[i], SIGNAL( toggled( bool ) ), this, SLOT( updateOptions() ) );
   }
-  connect( buttonBox->button( QDialogButtonBox::Apply ), SIGNAL( clicked() ), this, SLOT( apply() ) );
 }
 
 QgsLabelingGui::~QgsLabelingGui()
 {
-  QSettings settings;
-  settings.setValue( "/Windows/Labeling/geometry", saveGeometry() );
 }
 
 void QgsLabelingGui::apply()
@@ -328,6 +324,14 @@ QgsPalLayerSettings QgsLabelingGui::layerSettings()
   lyr.minFeatureSize = mMinSizeSpinBox->value();
   lyr.fontSizeInMapUnits = ( mFontSizeUnitComboBox->currentIndex() == 1 );
   lyr.wrapChar = wrapCharacterEdit->text();
+  if ( chkPreserveRotation->isChecked() )
+  {
+    lyr.preserveRotation = true;
+  }
+  else
+  {
+    lyr.preserveRotation = false;
+  }
 
   //data defined labeling
   setDataDefinedProperty( mSizeAttributeComboBox, QgsPalLayerSettings::Size, lyr );
@@ -605,6 +609,7 @@ void QgsLabelingGui::disableDataDefinedAlignment()
   mVerticalAlignmentComboBox->setEnabled( false );
   mRotationComboBox->setCurrentIndex( mRotationComboBox->findText( "" ) );
   mRotationComboBox->setEnabled( false );
+  chkPreserveRotation->setEnabled( false );
 }
 
 void QgsLabelingGui::enableDataDefinedAlignment()
@@ -612,4 +617,5 @@ void QgsLabelingGui::enableDataDefinedAlignment()
   mHorizontalAlignmentComboBox->setEnabled( true );
   mVerticalAlignmentComboBox->setEnabled( true );
   mRotationComboBox->setEnabled( true );
+  chkPreserveRotation->setEnabled( true );
 }

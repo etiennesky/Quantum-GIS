@@ -351,7 +351,8 @@ QString QgsStyleV2ManagerDialog::addColorRampStatic( QWidget* parent, QgsStyleV2
     if ( !dlg.exec() )
     {
       delete cptCityRamp;
-      return QString();
+      // return QString();
+      return dlg.selectedName();
     }
     ramp = cptCityRamp;
   }

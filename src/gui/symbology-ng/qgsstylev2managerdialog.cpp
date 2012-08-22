@@ -437,6 +437,8 @@ QString QgsStyleV2ManagerDialog::addColorRampStatic( QWidget* parent, QgsStyleV2
 
   // add new symbol to style and re-populate the list
   style->addColorRamp( name, ramp );
+  // TODO groups and tags
+  style->saveColorRamp( name, ramp, 0, QStringList() );
   return name;
 }
 

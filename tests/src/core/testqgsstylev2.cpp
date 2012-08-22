@@ -113,26 +113,34 @@ void TestStyleV2::testCreateColorRamps()
   stops[ 0.5 ] = QColor( Qt::white );
   gradientRamp->setStops( stops );
   QVERIFY( mStyle->addColorRamp( "test_gradient", gradientRamp ) );
+  // TODO fix stylev2 to save symbols+ramps in save()
+  mStyle->saveColorRamp( "test_gradient", gradientRamp, 0, QStringList() );
 
   // random ramp
   QgsVectorRandomColorRampV2* randomRamp = new QgsVectorRandomColorRampV2();
   QVERIFY( mStyle->addColorRamp( "test_random", randomRamp ) );
+  mStyle->saveColorRamp( "test_random", randomRamp, 0, QStringList() );
 
   // color brewer ramp
   QgsVectorColorBrewerColorRampV2* cb1Ramp = new QgsVectorColorBrewerColorRampV2();
   QVERIFY( mStyle->addColorRamp( "test_cb1", cb1Ramp ) );
+  mStyle->saveColorRamp( "test_cb1", cb1Ramp, 0, QStringList() );
   QgsVectorColorBrewerColorRampV2* cb2Ramp = new QgsVectorColorBrewerColorRampV2( "RdYlGn", 6 );
   QVERIFY( mStyle->addColorRamp( "test_cb2", cb2Ramp ) );
+  mStyle->saveColorRamp( "test_cb2", cb2Ramp, 0, QStringList() );
 
   // discrete ramp with no variant
   QgsCptCityColorRampV2* cc1Ramp = new QgsCptCityColorRampV2( "cb/seq/PuBuGn_06", "" );
   QVERIFY( mStyle->addColorRamp( "test_cc1", cc1Ramp ) );
+  mStyle->saveColorRamp( "test_cc1", cc1Ramp, 0, QStringList() );
   // discrete ramp with variant
   QgsCptCityColorRampV2* cc2Ramp = new QgsCptCityColorRampV2( "cb/div/PiYG", "_10" );
   QVERIFY( mStyle->addColorRamp( "test_cc2", cc2Ramp ) );
+  mStyle->saveColorRamp( "test_cc2", cc2Ramp, 0, QStringList() );
   // continuous ramp
   QgsCptCityColorRampV2* cc3Ramp = new QgsCptCityColorRampV2( "grass/byr", "" );
   QVERIFY( mStyle->addColorRamp( "test_cc3", cc3Ramp ) );
+  mStyle->saveColorRamp( "test_cc3", cc3Ramp, 0, QStringList() );
 }
 
 void TestStyleV2::testLoadColorRamps()
@@ -163,6 +171,8 @@ void TestStyleV2::testLoadColorRamps()
   colorTests.insert( "test_cc3", qMakePair( 0.25, QColor( "#7f7f7f" ) ) );
   colorTests.insert( "test_cc3", qMakePair( 0.66, QColor( "#ffad00" ) ) );
 
+  QgsDebugMsg( "loaded colorRamps: " + colorRamps.join( " ") );
+
   foreach ( QString name, colorRampsTest )
   {
     QgsDebugMsg( "colorRamp " + name );
@@ -191,6 +201,8 @@ void TestStyleV2::testSaveLoad()
   mStyle->load( QgsApplication::userStyleV2Path() );
 
   QStringList colorRamps = mStyle->colorRampNames();
+  QgsDebugMsg( "loaded colorRamps: " + colorRamps.join( " ") );
+
   QStringList colorRampsTest = QStringList() << "test_gradient";
 
   foreach ( QString name, colorRampsTest )

@@ -113,35 +113,29 @@ void TestStyleV2::testCreateColorRamps()
   QgsVectorGradientColorRampV2::StopsMap stops;
   stops[ 0.5 ] = QColor( Qt::white );
   gradientRamp->setStops( stops );
-  QVERIFY( mStyle->addColorRamp( "test_gradient", gradientRamp ) );
-  // TODO fix stylev2 to save symbols+ramps in save()
-  mStyle->saveColorRamp( "test_gradient", gradientRamp, 0, QStringList() );
+  QVERIFY( mStyle->addColorRamp( "test_gradient", gradientRamp, true ) );
 
   // random ramp
   QgsVectorRandomColorRampV2* randomRamp = new QgsVectorRandomColorRampV2();
-  QVERIFY( mStyle->addColorRamp( "test_random", randomRamp ) );
-  mStyle->saveColorRamp( "test_random", randomRamp, 0, QStringList() );
+  QVERIFY( mStyle->addColorRamp( "test_random", randomRamp, true ) );
 
   // color brewer ramp
   QgsVectorColorBrewerColorRampV2* cb1Ramp = new QgsVectorColorBrewerColorRampV2();
-  QVERIFY( mStyle->addColorRamp( "test_cb1", cb1Ramp ) );
-  mStyle->saveColorRamp( "test_cb1", cb1Ramp, 0, QStringList() );
+  QVERIFY( mStyle->addColorRamp( "test_cb1", cb1Ramp, true ) );
   QgsVectorColorBrewerColorRampV2* cb2Ramp = new QgsVectorColorBrewerColorRampV2( "RdYlGn", 6 );
-  QVERIFY( mStyle->addColorRamp( "test_cb2", cb2Ramp ) );
-  mStyle->saveColorRamp( "test_cb2", cb2Ramp, 0, QStringList() );
+  QVERIFY( mStyle->addColorRamp( "test_cb2", cb2Ramp, true ) );
 
-  // discrete ramp with no variant
-  QgsCptCityColorRampV2* cc1Ramp = new QgsCptCityColorRampV2( "cb/seq/PuBuGn_06", "" );
-  QVERIFY( mStyle->addColorRamp( "test_cc1", cc1Ramp ) );
-  mStyle->saveColorRamp( "test_cc1", cc1Ramp, 0, QStringList() );
-  // discrete ramp with variant
+  // if ( QgsCptCityColorRampV2::hasBasicSchemes() )
+  // {
+  QgsCptCityColorRampV2* cc1Ramp = new QgsCptCityColorRampV2( "jjg/misc/temperature", "" );
+  QVERIFY( mStyle->addColorRamp( "test_cc1", cc1Ramp, true ) );
   QgsCptCityColorRampV2* cc2Ramp = new QgsCptCityColorRampV2( "cb/div/PiYG", "_10" );
-  QVERIFY( mStyle->addColorRamp( "test_cc2", cc2Ramp ) );
-  mStyle->saveColorRamp( "test_cc2", cc2Ramp, 0, QStringList() );
-  // continuous ramp
-  QgsCptCityColorRampV2* cc3Ramp = new QgsCptCityColorRampV2( "grass/byr", "" );
-  QVERIFY( mStyle->addColorRamp( "test_cc3", cc3Ramp ) );
-  mStyle->saveColorRamp( "test_cc3", cc3Ramp, 0, QStringList() );
+  QVERIFY( mStyle->addColorRamp( "test_cc2", cc2Ramp, true ) );
+  // }
+  // else
+  // {
+  //   QWARN( "cpt-city support files not found - skipping cpt-city color ramp tests" );
+  // }
 }
 
 void TestStyleV2::testLoadColorRamps()
@@ -196,11 +190,12 @@ void TestStyleV2::testLoadColorRamps()
 
 void TestStyleV2::testSaveLoad()
 {
-  //#if 0
-  mStyle->save();
+  // save not needed anymore, because used update=true in addColorRamp()
+  // mStyle->save();
   mStyle->clear();
   mStyle->load( QgsApplication::userStyleV2Path() );
 
+  // basic test to see that ramp is present
   QStringList colorRamps = mStyle->colorRampNames();
   QgsDebugMsg( "loaded colorRamps: " + colorRamps.join( " " ) );
 
@@ -215,9 +210,9 @@ void TestStyleV2::testSaveLoad()
     if ( ramp )
       delete ramp;
   }
-  // test color ramps again
+
+  // test content again
   testLoadColorRamps();
-  //#endif
 }
 
 

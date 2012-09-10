@@ -20,112 +20,156 @@
 #include "qgsapplication.h"
 #include "qgslogger.h"
 
-#include <QStyleOptionGroupBox>
-#include <QStylePainter>
-#include <QLayout>
-#include <QProxyStyle>
+#include <QToolButton>
 
-class QgsCollapsibleGroupBoxStyle : public QProxyStyle
-{
-  public:
-    QgsCollapsibleGroupBoxStyle( QStyle * style = 0 ) : QProxyStyle( style ) {}
 
-    void drawPrimitive( PrimitiveElement element, const QStyleOption *option,
-                        QPainter *painter, const QWidget *widget ) const
-    {
-      if ( element == PE_IndicatorCheckBox )
-      {
-        const QgsCollapsibleGroupBox* groupBox =
-          dynamic_cast<const QgsCollapsibleGroupBox*>( widget );
-        if ( groupBox )
-        {
-          return drawPrimitive( groupBox->isCollapsed() ?
-                                PE_IndicatorArrowRight : PE_IndicatorArrowDown,
-                                option, painter, widget );
-        }
-      }
-      return QProxyStyle::drawPrimitive( element, option, painter, widget );
-    }
-};
+QIcon QgsCollapsibleGroupBox::mCollapseIcon;
+QIcon QgsCollapsibleGroupBox::mExpandIcon;
 
 QgsCollapsibleGroupBox::QgsCollapsibleGroupBox( QWidget *parent )
-    : QGroupBox( parent ), mCollapsed( false )
+    : QGroupBox( parent ), mCollapsed( true ), mMarginOffset( 0 )
 {
   init();
 }
 
 QgsCollapsibleGroupBox::QgsCollapsibleGroupBox( const QString &title,
     QWidget *parent )
-    : QGroupBox( title, parent ), mCollapsed( false )
+    : QGroupBox( title, parent ), mCollapsed( true ), mMarginOffset( 0 )
 {
   init();
 }
 
 void QgsCollapsibleGroupBox::init()
 {
-  setStyle( new QgsCollapsibleGroupBoxStyle( QApplication::style() ) );
-  connect( this, SIGNAL( toggled( bool ) ), this, SLOT( setToggled( bool ) ) );
+  /* Top margin fix is to increase the vertical default spacing
+     between multiple groupboxes, especially ones without title checkboxes
+     may not be necessary on certain platforms */
+  mMarginOffset = 0; // in pixels; for temporary testing across platforms
+
+  // init icons
+  if ( mCollapseIcon.isNull() )
+  {
+    mCollapseIcon = QgsApplication::getThemeIcon( "/mIconCollapse.png" );
+    mExpandIcon = QgsApplication::getThemeIcon( "/mIconExpand.png" );
+  }
+
+  // customize style sheet
+  // TODO: move to app stylesheet system, when appropriate
+  QString ss;
+  if ( mMarginOffset > 0 )
+  {
+    ss += "QgsCollapsibleGroupBox {";
+    ss += QString( "  margin-top: %1px;" ).arg( mMarginOffset + 8 );
+    ss += "}";
+  }
+  ss += "QgsCollapsibleGroupBox::title {";
+  ss += "  subcontrol-origin: margin;";
+  ss += "  subcontrol-position: top left;";
+  //  ss += QString( "  font-size: %1";).arg( appFontSize );
+  ss += "  margin-left: 24px;";  // offset for disclosure triangle
+  if ( mMarginOffset > 0 )
+    ss += QString( "  margin-top: %1px;" ).arg( mMarginOffset );
+  ss += "}";
+  setStyleSheet( ss );
+
+  // collapse button
+  mCollapseButton = new QToolButton( this );
+  mCollapseButton->setObjectName( "collapseButton" );
+  mCollapseButton->setAutoRaise( true );
+  mCollapseButton->setFixedSize( 16, 16 );
+  // TODO set size (as well as margins) depending on theme
+  mCollapseButton->setIconSize( QSize( 12, 12 ) );
+  mCollapseButton->setIcon( mExpandIcon );
+  if ( mMarginOffset > 0 )
+    mCollapseButton->move( 0, mMarginOffset ); // match title offset
+
+  // clear toolbutton default background and border
+  // TODO: move to app stylesheet system, when appropriate
+  QString ssd;
+  ssd = QString( "QgsCollapsibleGroupBox > QToolButton#%1 {" ).arg( mCollapseButton->objectName() );
+  ssd += "  background-color: rgba(255, 255, 255, 0); border: none;";
+  ssd += "}";
+  mCollapseButton->setStyleSheet( ssd );
+
+  connect( mCollapseButton, SIGNAL( clicked() ), this, SLOT( toggleCollapsed() ) );
+  connect( this, SIGNAL( clicked( bool ) ), this, SLOT( checkClicked() ) );
+  connect( this, SIGNAL( toggled( bool ) ), this, SLOT( checkToggled() ) );
 }
 
 void QgsCollapsibleGroupBox::showEvent( QShowEvent * event )
 {
   QGroupBox::showEvent( event );
-  // collapse if needed - any calls to setCollapsed() before have no effect
-  if ( isCheckable() && ! isChecked() && ! isCollapsed() )
+  // expand if needed - any calls to setCollapsed() before have no effect
+  if ( mCollapsed )
+  {
+    setCollapsed( mCollapsed );
+  }
+  else
+  {
+    /* manually uncollapsing (already default) on show may scroll scroll areas
+       still emit signal for connections using uncollapsed state */
+    emit collapsedStateChanged( this );
+  }
+}
+
+void QgsCollapsibleGroupBox::checkClicked()
+{
+  mCollapseButton->setEnabled( true ); // always keep enabled
+  // expand/collapse when clicked
+  if ( isChecked() && isCollapsed() )
+    setCollapsed( false );
+  else if ( ! isChecked() && ! isCollapsed() )
     setCollapsed( true );
+}
+
+void QgsCollapsibleGroupBox::checkToggled()
+{
+  mCollapseButton->setEnabled( true ); // always keep enabled
+}
+
+void QgsCollapsibleGroupBox::toggleCollapsed()
+{
+  setCollapsed( !mCollapsed );
 }
 
 void QgsCollapsibleGroupBox::setCollapsed( bool collapse )
 {
-  if ( ! isVisible() )
+  if ( !isVisible() )
     return;
 
   mCollapsed = collapse;
 
-  // minimize layout margins and save for subsequent restore
-  if ( collapse )
-  {
-    if ( layout() )
-    {
-      mMargins = layout()->contentsMargins();
-      layout()->setContentsMargins( 1, 1, 1, 1 );
-    }
-  }
-  else
-  {
-    if ( layout() )
-    {
-      layout()->setContentsMargins( mMargins );
-    }
-  }
+  // for consistent look/spacing across platforms when collapsed
+  setFlat( collapse );
+  setMaximumHeight( collapse ? 36 : 16777215 );
 
   // if we are collapsing, save hidden widgets in a list
   if ( collapse )
   {
+    mCollapseButton->setIcon( mExpandIcon );
     mHiddenWidgets.clear();
     foreach ( QWidget *widget, findChildren<QWidget*>() )
     {
-      if ( widget->isHidden() )
+      if ( widget->isHidden() && widget->objectName() != mCollapseButton->objectName() )
         mHiddenWidgets << widget;
     }
   }
 
   // show/hide widgets
   foreach ( QWidget *widget, findChildren<QWidget*>() )
-    widget->setHidden( collapse );
+    if ( widget->objectName() != mCollapseButton->objectName() )
+      widget->setHidden( collapse );
 
   // if we are expanding, re-hide saved hidden widgets
   if ( ! collapse )
   {
+    mCollapseButton->setIcon( mCollapseIcon );
     foreach ( QWidget *widget, mHiddenWidgets )
     {
       widget->setHidden( true );
     }
   }
 
-  if ( mCollapsed )
-    emit collapsed( this );
-  else
-    emit expanded( this );
+  emit collapsedStateChanged( this );
 }
 

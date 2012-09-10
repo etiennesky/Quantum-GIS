@@ -21,11 +21,13 @@
 #include "qgisgui.h"
 
 /** \ingroup gui
- * A groupbox that collapses/expands when toggled and draws an expand/collapse icon in lieu of checkbox.
- * Widget must be checkable for expand/collapse icon to appear.
+ * A groupbox that collapses/expands when toggled.
+ * @note Collapsible function not shown in promoted QtDesigner widgets.
  */
 
 #include <QGroupBox>
+
+class QToolButton;
 
 class GUI_EXPORT QgsCollapsibleGroupBox : public QGroupBox
 {
@@ -36,14 +38,15 @@ class GUI_EXPORT QgsCollapsibleGroupBox : public QGroupBox
     QgsCollapsibleGroupBox( const QString &title, QWidget *parent = 0 );
 
     bool isCollapsed() const { return mCollapsed; }
+    void setCollapsed( bool collapse );
 
   signals:
-    void collapsed( QWidget* );
-    void expanded( QWidget* );
+    void collapsedStateChanged( QWidget* );
 
   public slots:
-    void setToggled( bool toggled ) { setCollapsed( ! toggled ); }
-    void setCollapsed( bool collapse );
+    void checkClicked();
+    void checkToggled();
+    void toggleCollapsed();
 
   protected:
     void init();
@@ -51,8 +54,12 @@ class GUI_EXPORT QgsCollapsibleGroupBox : public QGroupBox
 
   private:
     bool mCollapsed;
-    QMargins mMargins;
     QList< QWidget* > mHiddenWidgets;
+    QToolButton* mCollapseButton;
+    int mMarginOffset;
+
+    static QIcon mCollapseIcon;
+    static QIcon mExpandIcon;
 };
 
 #endif

@@ -29,9 +29,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-263</y>
-        <width>549</width>
-        <height>806</height>
+        <y>0</y>
+        <width>550</width>
+        <height>738</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -191,11 +191,23 @@
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="mExtentGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
          <property name="title">
           <string>Extent</string>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+         </property>
          <property name="checkable">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
@@ -337,11 +349,20 @@
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="mResolutionGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Resolution</string>
          </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
          <property name="checkable">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
@@ -413,6 +434,12 @@
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="mCreateOptionsGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Create Options</string>
          </property>
@@ -423,9 +450,6 @@
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <property name="margin">
-           <number>9</number>
-          </property>
           <item row="0" column="0">
            <widget class="QgsRasterFormatSaveOptionsWidget" name="mCreateOptionsWidget" native="true"/>
           </item>
@@ -434,6 +458,12 @@
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="mTilesGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Tiles</string>
          </property>
@@ -444,17 +474,8 @@
           <bool>false</bool>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <property name="margin">
-           <number>9</number>
-          </property>
           <item>
            <widget class="QLabel" name="mMaximumSizeXLabel">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
             <property name="toolTip">
              <string>Maximum number of columns in one tile.</string>
             </property>
@@ -465,9 +486,6 @@
           </item>
           <item>
            <widget class="QLineEdit" name="mMaximumSizeXLineEdit">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
             <property name="toolTip">
              <string>Maximum number of columns in one tile.</string>
             </property>
@@ -475,9 +493,6 @@
           </item>
           <item>
            <widget class="QLabel" name="mMaximumSizeYLabel">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
             <property name="toolTip">
              <string>Maximum number of rows in one tile.</string>
             </property>
@@ -488,9 +503,6 @@
           </item>
           <item>
            <widget class="QLineEdit" name="mMaximumSizeYLineEdit">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
             <property name="toolTip">
              <string>Maximum number of rows in one tile.</string>
             </property>
@@ -498,9 +510,6 @@
           </item>
           <item>
            <widget class="QCheckBox" name="mTileModeCheckBox">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
             <property name="text">
              <string>Create VRT</string>
             </property>
@@ -510,28 +519,12 @@
         </widget>
        </item>
        <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <widget class="QgsCollapsibleGroupBox" name="mNoDataGroupBox">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>150</height>
-          </size>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
          <property name="toolTip">
           <string>Additional no data values. The specified values will be set to no data in output raster.</string>
@@ -553,6 +546,12 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>100</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -591,6 +590,9 @@
               <property name="toolTip">
                <string>Remove selected row</string>
               </property>
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
               <property name="text">
                <string>...</string>
               </property>
@@ -621,6 +623,12 @@
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="mPyramidsGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Pyramids</string>
          </property>
@@ -633,44 +641,7 @@
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="3" column="0">
            <widget class="QgsRasterPyramidsOptionsWidget" name="mPyramidsOptionsWidget" native="true">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
            </widget>
-          </item>
-          <item row="0" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
-             <widget class="QRadioButton" name="radioButton">
-              <property name="text">
-               <string>No pyramids</string>
-              </property>
-              <attribute name="buttonGroup">
-               <string>mPyramidsButtonGroup</string>
-              </attribute>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="radioButton_2">
-              <property name="text">
-               <string>Build pyramids</string>
-              </property>
-              <attribute name="buttonGroup">
-               <string>mPyramidsButtonGroup</string>
-              </attribute>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="radioButton_3">
-              <property name="text">
-               <string>Use existing</string>
-              </property>
-              <attribute name="buttonGroup">
-               <string>mPyramidsButtonGroup</string>
-              </attribute>
-             </widget>
-            </item>
-           </layout>
           </item>
           <item row="2" column="0">
            <widget class="Line" name="line">
@@ -725,8 +696,31 @@
             </item>
            </layout>
           </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="mPyramidsUseExistingCheckBox">
+            <property name="text">
+             <string>Use existing</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -773,8 +767,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>254</x>
+     <y>575</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -789,8 +783,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>322</x>
+     <y>575</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -799,7 +793,4 @@
    </hints>
   </connection>
  </connections>
- <buttongroups>
-  <buttongroup name="mPyramidsButtonGroup"/>
- </buttongroups>
 </ui>

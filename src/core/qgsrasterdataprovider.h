@@ -577,12 +577,10 @@ class CORE_EXPORT QgsRasterDataProvider : public QgsDataProvider, public QgsRast
     /** Remove dataset*/
     virtual bool remove() { return false; }
 
-    static QStringList pyramidResamplingMethods( QString providerKey )
-    {
-      return providerKey == "gdal" ?
-             QStringList() << tr( "Average" ) << tr( "Nearest Neighbour" ) << tr( "Gauss" ) <<
-             tr( "Cubic" ) << tr( "Mode" ) << tr( "None" ) : QStringList();
-    }
+    /** Returns a list of pyramid resampling method names for given provider */
+    static QStringList pyramidResamplingMethods( QString providerKey = "gdal" );
+    /** Returns the pyramid resampling argument that corresponds to a given method */
+    static QString pyramidResamplingArg( QString method, QString providerKey = "gdal" );
 
     /** Validates creation options for a specific dataset and destination format - used by GDAL provider only.
      * See also validateCreationOptionsFormat() in gdal provider for validating options based on format only. */
@@ -652,6 +650,10 @@ class CORE_EXPORT QgsRasterDataProvider : public QgsDataProvider, public QgsRast
                          int theStats = QgsRasterBandStats::All,
                          const QgsRectangle & theExtent = QgsRectangle(),
                          int theBinCount = 0 );
+
+    static void initPyramidResamplingDefs();
+    static QStringList mPyramidResamplingListGdal;
+    static QgsStringMap mPyramidResamplingMapGdal;
 
 };
 #endif

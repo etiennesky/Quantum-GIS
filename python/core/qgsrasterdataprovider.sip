@@ -420,7 +420,10 @@ class QgsRasterDataProvider : QgsDataProvider, QgsRasterInterface
     /** Remove dataset*/
     virtual bool remove();
 
-    static QStringList pyramidResamplingMethods( QString providerKey );
+    /** Returns a list of pyramid resampling method names for given provider */
+    static QStringList pyramidResamplingMethods( QString providerKey = "gdal" );
+    /** Returns the pyramid resampling argument that corresponds to a given method */
+    static QString pyramidResamplingArg( QString method, QString providerKey = "gdal" );
 
     /** Validates creation options for a specific dataset and destination format - used by GDAL provider only.
      * See also validateCreationOptionsFormat() in gdal provider for validating options based on format only. */

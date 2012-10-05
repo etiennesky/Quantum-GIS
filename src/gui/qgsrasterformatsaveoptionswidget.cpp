@@ -59,7 +59,7 @@ QgsRasterFormatSaveOptionsWidget::QgsRasterFormatSaveOptionsWidget( QWidget* par
         << "COMPRESS=DEFLATE PREDICTOR=2 ZLEVEL=9" );
     mBuiltinProfiles[ "z_gtiff_4jpeg" ] =
       ( QStringList() << "GTiff" << tr( "Lossy compression" )
-        << "COMPRESS=JPEG" );
+        << "COMPRESS=JPEG JPEG_QUALITY=75" );
 
     // overview compression schemes for GTiff format, see
     // http://www.gdal.org/gdaladdo.html and http://www.gdal.org/frmt_gtiff.html
@@ -75,7 +75,7 @@ QgsRasterFormatSaveOptionsWidget::QgsRasterFormatSaveOptionsWidget( QWidget* par
         << "COMPRESS_OVERVIEW=DEFLATE PREDICTOR_OVERVIEW=2 ZLEVEL=9" ); // how to set zlevel?
     mBuiltinProfiles[ "z__pyramids_gtiff_4jpeg" ] =
       ( QStringList() << "_pyramids" << tr( "Lossy compression" )
-        << "COMPRESS_OVERVIEW=JPEG PHOTOMETRIC_OVERVIEW=YCBCR INTERLEAVE_OVERVIEW=PIXEL" );
+        << "COMPRESS_OVERVIEW=JPEG JPEG_QUALITY_OVERVIEW=75 PHOTOMETRIC_OVERVIEW=YCBCR INTERLEAVE_OVERVIEW=PIXEL" );
   }
 
   connect( mProfileComboBox, SIGNAL( currentIndexChanged( const QString & ) ),
@@ -137,7 +137,7 @@ void QgsRasterFormatSaveOptionsWidget::setType( QgsRasterFormatSaveOptionsWidget
     if ( type != Full )
       mProfileButtons->setVisible( false );
 
-    // show elevant page
+    // show relevant page
     if ( type == ProfileLineEdit )
       swapOptionsUI( 1 );
   }
@@ -152,11 +152,13 @@ void QgsRasterFormatSaveOptionsWidget::updateProfiles()
   {
     it.next();
     QString profileKey = it.key();
-    if ( ! profileKeys.contains( profileKey ) )
+    if ( ! profileKeys.contains( profileKey ) && it.value().count() > 0 )
     {
       // insert key if is for all formats or this format (GTiff)
       if ( it.value()[0] == "" ||  it.value()[0] == mFormat )
+      {
         profileKeys.insert( 0, profileKey );
+      }
     }
   }
   qSort( profileKeys );
@@ -217,6 +219,7 @@ void QgsRasterFormatSaveOptionsWidget::updateOptions()
     mOptionsLineEdit->setText( myOptions );
     mOptionsLineEdit->setCursorPosition( 0 );
   }
+  emit optionsChanged();
 }
 
 void QgsRasterFormatSaveOptionsWidget::apply()
@@ -256,6 +259,11 @@ void QgsRasterFormatSaveOptionsWidget::helpOptions()
     if ( message.isEmpty() )
       message = tr( "Cannot get create options for driver %1" ).arg( mFormat );
   }
+  else if ( mProvider == "gdal" && mFormat == "_pyramids" )
+  {
+    message = tr( "For details please see the following pages" );
+    message += "\n\nhttp://www.gdal.org/gdaladdo.html\n\nhttp://www.gdal.org/frmt_gtiff.html";
+  }
   else
     message = tr( "No help available" );
 
@@ -263,7 +271,7 @@ void QgsRasterFormatSaveOptionsWidget::helpOptions()
   QgsDialog *dlg = new QgsDialog( this );
   QTextEdit *textEdit = new QTextEdit( dlg );
   textEdit->setReadOnly( true );
-  message = tr( "Create Options:\n\n%1" ).arg( message );
+  // message = tr( "Create Options:\n\n%1" ).arg( message );
   textEdit->setText( message );
   dlg->layout()->addWidget( textEdit );
   dlg->resize( 600, 400 );
@@ -508,9 +516,9 @@ void QgsRasterFormatSaveOptionsWidget::swapOptionsUI( int newIndex )
 
 void QgsRasterFormatSaveOptionsWidget::updateControls()
 {
-  bool enabled = ( mProvider == "gdal" && mFormat != "" && mFormat != "_pyramids" );
-  mOptionsValidateButton->setEnabled( enabled );
-  mOptionsHelpButton->setEnabled( enabled );
+  mOptionsValidateButton->setEnabled(( mProvider == "gdal" &&
+                                       mFormat != "" && mFormat != "_pyramids" ) );
+  mOptionsHelpButton->setEnabled(( mProvider == "gdal" && mFormat != "" ) );
 }
 
 // map options label left mouse click to optionsToggle()
@@ -546,3 +554,9 @@ bool QgsRasterFormatSaveOptionsWidget::eventFilter( QObject *obj, QEvent *event 
   return QObject::eventFilter( obj, event );
 }
 
+
+void QgsRasterFormatSaveOptionsWidget::showEvent( QShowEvent * event )
+{
+  Q_UNUSED( event );
+  mOptionsTable->horizontalHeader()->resizeSection( 0, mOptionsTable->width() - 115 );
+}

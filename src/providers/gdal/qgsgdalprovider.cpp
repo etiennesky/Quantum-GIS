@@ -1408,36 +1408,19 @@ QString QgsGdalProvider::buildPyramids( QList<QgsRasterPyramid> const & theRaste
       myOverviewLevelsVector.append( myRasterPyramidIterator->level );
     }
   }
-  /* From : http://remotesensing.org/gdal/classGDALDataset.html#a23
-   * pszResampling : one of "NEAREST", "GAUSS", "CUBIC", "AVERAGE", "MODE", "AVERAGE_MAGPHASE" or "NONE"
-   *                 controlling the downsampling method applied.
+  /* From : http://www.gdal.org/classGDALDataset.html#a2aa6f88b3bbc840a5696236af11dde15
+   * pszResampling : one of "NEAREST", "GAUSS", "CUBIC", "AVERAGE", "MODE", "AVERAGE_MAGPHASE" or "NONE" controlling the downsampling method applied.
    * nOverviews : number of overviews to build.
    * panOverviewList : the list of overview decimation factors to build.
-   * nBand : number of bands to build overviews for in panBandList. Build for all bands if this is 0.
+   * nListBands : number of bands to build overviews for in panBandList. Build for all bands if this is 0.
    * panBandList : list of band numbers.
    * pfnProgress : a function to call to report progress, or NULL.
    * pProgressData : application data to pass to the progress function.
    */
 
-  const char* theMethod;
-  if ( theResamplingMethod == tr( "Gauss" ) )
-    theMethod = "GAUSS";
-  else if ( theResamplingMethod == tr( "Cubic" ) )
-    theMethod = "CUBIC";
-  else if ( theResamplingMethod == tr( "Average" ) )
-    theMethod = "AVERAGE";
-  else if ( theResamplingMethod == tr( "Mode" ) )
-    theMethod = "MODE";
-  //NOTE magphase is disabled in the gui since it tends
-  //to create corrupted images. The images can be repaired
-  //by running one of the other resampling strategies below.
-  //see ticket #284
-  // else if ( theResamplingMethod == tr( "Average Magphase" ) )
-  //   theMethod = "AVERAGE_MAGPHASE";
-  else if ( theResamplingMethod == tr( "None" ) )
-    theMethod = "NONE";
-  else // fall back to nearest neighbor
-    theMethod = "NEAREST";
+  // resampling method is now passed directly, via QgsRasterDataProvider::pyramidResamplingArg()
+  // average_mp and average_magphase have been removed from the gui
+  const char* theMethod = theResamplingMethod.toUpper().toLocal8Bit.constData();
 
   //build the pyramid and show progress to console
   QgsDebugMsg( QString( "Building overviews at %1 levels using resampling method %2"
@@ -2479,13 +2462,21 @@ QGISEXTERN QString helpCreationOptionsFormat( QString format )
   GDALDriverH myGdalDriver = GDALGetDriverByName( format.toLocal8Bit().constData() );
   if ( myGdalDriver )
   {
-    // need to serialize xml to get newlines
-    // should we make the basic xml prettier?
+    // first report details and help page
+    char ** GDALmetadata = GDALGetMetadata( myGdalDriver, NULL );
+    message += "Format Details:\n";
+    message += QString( "  Extension: %1\n" ).arg( CSLFetchNameValue( GDALmetadata, GDAL_DMD_EXTENSION ) );
+    message += QString( "  Short Name: %1" ).arg( GDALGetDriverShortName( myGdalDriver ) );
+    message += QString( "  /  Long Name: %1\n" ).arg( GDALGetDriverLongName( myGdalDriver ) );
+    message += QString( "  Help page:  http://www.gdal.org/%1\n\n" ).arg( CSLFetchNameValue( GDALmetadata, GDAL_DMD_HELPTOPIC ) );
+
+    // next get creation options
+    // need to serialize xml to get newlines, should we make the basic xml prettier?
     CPLXMLNode *psCOL = CPLParseXMLString( GDALGetMetadataItem( myGdalDriver,
                                            GDAL_DMD_CREATIONOPTIONLIST, "" ) );
     char *pszFormattedXML = CPLSerializeXMLTree( psCOL );
     if ( pszFormattedXML )
-      message = QString( pszFormattedXML );
+      message += QString( pszFormattedXML );
     if ( psCOL )
       CPLDestroyXMLNode( psCOL );
     if ( pszFormattedXML )

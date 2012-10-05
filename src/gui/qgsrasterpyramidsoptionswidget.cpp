@@ -38,9 +38,10 @@ QgsRasterPyramidsOptionsWidget::QgsRasterPyramidsOptionsWidget( QWidget* parent,
 {
   setupUi( this );
 
-  mPyramidsOptionsWidget->setProvider( provider );
-  mPyramidsOptionsWidget->setFormat( "_pyramids" );
-  // mPyramidsOptionsWidget->swapOptionsUI( 1 );
+  mSaveOptionsWidget->setProvider( provider );
+  mSaveOptionsWidget->setFormat( "_pyramids" );
+  // mSaveOptionsWidget->swapOptionsUI( 1 );
+  // mSaveOptionsWidget->setType( QgsRasterFormatSaveOptionsWidget::ProfileLineEdit );
 
   updateUi();
 }
@@ -73,8 +74,11 @@ void QgsRasterPyramidsOptionsWidget::updateUi()
                                           mySettings.value( prefix + "resampling", "Average" ).toString() ) );
 
   // validate string, only space-separated positive integers are allowed
+  lePyramidsLevels->setEnabled( cbxPyramidsLevelsCustom->isChecked() );
   lePyramidsLevels->setValidator( new QRegExpValidator( QRegExp( "(\\d*)(\\s\\d*)*" ), lePyramidsLevels ) );
-  connect( lePyramidsLevels, SIGNAL( editingFinished() ),
+  // connect( lePyramidsLevels, SIGNAL( editingFinished() ),
+  //          this, SLOT( setOverviewList() ) );
+  connect( lePyramidsLevels, SIGNAL( textEdited( const QString & ) ),
            this, SLOT( setOverviewList() ) );
 
   // overview list
@@ -104,14 +108,19 @@ void QgsRasterPyramidsOptionsWidget::updateUi()
   }
   setOverviewList();
 
-  mPyramidsOptionsWidget->updateProfiles();
+  mSaveOptionsWidget->updateProfiles();
+
+  connect( cbxPyramidsFormat, SIGNAL( currentIndexChanged( int ) ),
+           this, SIGNAL( someValueChanged() ) );
+  connect( cboResamplingMethod, SIGNAL( currentIndexChanged( int ) ),
+           this, SIGNAL( someValueChanged() ) );
+  connect( mSaveOptionsWidget, SIGNAL( optionsChanged() ),
+           this, SIGNAL( someValueChanged() ) );
 }
-
-
 
 QString QgsRasterPyramidsOptionsWidget::resamplingMethod() const
 {
-  return cboResamplingMethod->currentText().trimmed();
+  return QgsRasterDataProvider::pyramidResamplingArg( cboResamplingMethod->currentText().trimmed() );
 }
 
 void QgsRasterPyramidsOptionsWidget::apply()
@@ -140,7 +149,7 @@ void QgsRasterPyramidsOptionsWidget::apply()
   }
   mySettings.setValue( prefix + "overviewList", tmpStr.trimmed() );
 
-  mPyramidsOptionsWidget->apply();
+  mSaveOptionsWidget->apply();
 }
 
 void QgsRasterPyramidsOptionsWidget::checkAllLevels( bool checked )
@@ -164,7 +173,7 @@ void QgsRasterPyramidsOptionsWidget::setOverviewList()
 
   mOverviewList.clear();
 
-  // if custum levels is toggled, get selection from line edit
+  // if custom levels is toggled, get selection from line edit
   if ( cbxPyramidsLevelsCustom->isChecked() )
   {
     // should we also validate that numbers are increasing?

@@ -390,7 +390,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="creationGroupBox">
+    <widget class="QgsCollapsibleGroupBox" name="creationGroupBox">
      <property name="title">
       <string>&amp;Creation Options</string>
      </property>
@@ -402,10 +402,10 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="bottomMargin">
-       <number>0</number>
+       <number>4</number>
       </property>
       <item>
-       <widget class="GdalToolsOptionsTable" name="creationOptionsTable" native="true"/>
+       <widget class="QgsRasterFormatSaveOptionsWidget" name="creationOptionsWidget" native="true"/>
       </item>
      </layout>
     </widget>
@@ -414,15 +414,21 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>GdalToolsOptionsTable</class>
-   <extends>QWidget</extends>
-   <header>optionsTable</header>
+   <class>QgsCollapsibleGroupBox</class>
+   <extends>QGroupBox</extends>
+   <header>qgis.gui</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>GdalToolsInOutSelector</class>
    <extends>QWidget</extends>
    <header>inOutSelector</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QgsRasterFormatSaveOptionsWidget</class>
+   <extends>QWidget</extends>
+   <header>qgis.gui</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

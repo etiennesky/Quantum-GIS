@@ -34,17 +34,17 @@
      </property>
      <item>
       <property name="text">
-       <string>External</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
        <string>Internal (if possible)</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>External (Erdas Imagine)</string>
+       <string>External (GTiff .ovr)</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>External (Erdas Imagine .aux)</string>
       </property>
      </item>
     </widget>
@@ -109,7 +109,7 @@
     </widget>
    </item>
    <item row="8" column="0" colspan="3">
-    <widget class="QgsRasterFormatSaveOptionsWidget" name="mPyramidsOptionsWidget" native="true"/>
+    <widget class="QgsRasterFormatSaveOptionsWidget" name="mSaveOptionsWidget" native="true"/>
    </item>
    <item row="3" column="1">
     <spacer name="horizontalSpacer">

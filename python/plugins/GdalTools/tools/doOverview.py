@@ -30,7 +30,7 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
 
       self.setParamsStatus(
         [
-          (self.inSelector, SIGNAL("filenameChanged()")),
+          ( self.inSelector, SIGNAL("filenameChanged()")),
           ( self.algorithmCombo, SIGNAL( "currentIndexChanged( int )" ), self.algorithmCheck ),
           ( self.levelsEdit, SIGNAL( "textChanged( const QString & )" ) ),
           ( self.roModeCheck, SIGNAL( "stateChanged( int )" ), None, "1.6.0" ),
@@ -38,7 +38,9 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
           ( self.jpegQualitySpin, SIGNAL( "valueChanged (int)" ) ),
           ( self.jpegQualityContainer, None, self.tiffjpegCheck),
           ( self.jpegQualityContainer, None, None, "1.7.0"),
-          ( self.cleanCheck, SIGNAL( "stateChanged(int)" ), None, "1.7.0" )
+          ( self.cleanCheck, SIGNAL( "stateChanged(int)" ), None, "1.7.0" ),
+          ( self.mPyramidOptionsWidget, SIGNAL( "overviewListChanged()" ), None, "1.9.0" ),
+          ( self.mPyramidOptionsWidget, SIGNAL( "someValueChanged()" ), None, "1.9.0" )
         ]
       )
 
@@ -86,27 +88,48 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
 
   def getArguments( self ):
       arguments = QStringList()
-      if self.algorithmCheck.isChecked() and self.algorithmCombo.currentIndex() >= 0:
-        arguments << "-r"
-        arguments << self.resampling_method[self.algorithmCombo.currentIndex()]
-      if self.roModeCheck.isChecked():
+
+      #if self.algorithmCheck.isChecked() and self.algorithmCombo.currentIndex() >= 0:
+      #  arguments << "-r"
+      #  arguments << self.resampling_method[self.algorithmCombo.currentIndex()]
+      arguments << "-r"
+      arguments << self.mPyramidOptionsWidget.resamplingMethod();
+
+      #if self.roModeCheck.isChecked():
+      #  arguments << "-ro"
+      #if self.rrdCheck.isChecked():
+      #  arguments << "--config" << "USE_RRD" << "YES"
+      format = self.mPyramidOptionsWidget.pyramidsFormat()
+      if format == QgsRasterDataProvider.PyramidsGTiff:
         arguments << "-ro"
-      if self.rrdCheck.isChecked():
+      elif format == QgsRasterDataProvider.PyramidsErdas:
         arguments << "--config" << "USE_RRD" << "YES"
-      if self.tiffjpegCheck.isChecked():
-        arguments << "--config" << "COMPRESS_OVERVIEW" << "JPEG" << "--config" << "PHOTOMETRIC_OVERVIEW" << "YCBCR" << "--config" << "INTERLEAVE_OVERVIEW" << "PIXEL"
-        if self.jpegQualityContainer.isVisible():
-            arguments << "--config" << "JPEG_QUALITY_OVERVIEW" << self.jpegQualitySpin.cleanText()
+
+      #if self.tiffjpegCheck.isChecked():
+      #  arguments << "--config" << "COMPRESS_OVERVIEW" << "JPEG" << "--config" << "PHOTOMETRIC_OVERVIEW" << "YCBCR" << "--config" << "INTERLEAVE_OVERVIEW" << "PIXEL"
+      #  if self.jpegQualityContainer.isVisible():
+      #      arguments << "--config" << "JPEG_QUALITY_OVERVIEW" << self.jpegQualitySpin.cleanText()
+      for option in self.mPyramidOptionsWidget.createOptions():
+        (k,v) = option.split("=")
+        arguments << "--config" << str(k) << str(v)
+
       if self.cleanCheck.isChecked():
           arguments << "-clean"
+
       if self.isBatchEnabled():
         return arguments
 
       arguments << self.getInputFileName()
-      if not self.levelsEdit.text().isEmpty():
-        arguments << self.levelsEdit.text().split( " " )
-      else:
-        arguments << "2" << "4" << "8" << "16" << "32"
+
+      #if not self.levelsEdit.text().isEmpty():
+      #  arguments << self.levelsEdit.text().split( " " )
+      #else:
+      #  arguments << "2" << "4" << "8" << "16" << "32"
+      if len(self.mPyramidOptionsWidget.overviewList()) == 0:
+        arguments << "[levels]"
+      for level in self.mPyramidOptionsWidget.overviewList():
+        arguments << str(level)
+
       return arguments
 
   def getInputFileName( self ):

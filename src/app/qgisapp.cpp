@@ -4088,6 +4088,7 @@ void QgisApp::saveAsRasterFile()
     }
     fileWriter.setCreateOptions( d.createOptions() );
 
+    // TODO add pyramids create options
     fileWriter.setBuildPyramidsFlag( d.buildPyramidsFlag() );
     fileWriter.setPyramidsList( d.overviewList() );
     fileWriter.setPyramidsResampling( d.pyramidsResampling() );

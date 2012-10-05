@@ -36,8 +36,8 @@ class GUI_EXPORT QgsRasterPyramidsOptionsWidget: public QWidget,
     QgsRasterPyramidsOptionsWidget( QWidget* parent = 0, QString provider = "gdal" );
     ~QgsRasterPyramidsOptionsWidget();
 
-    QStringList createOptions() const { return mPyramidsOptionsWidget->options(); }
-    QgsRasterFormatSaveOptionsWidget* createOptionsWidget() { return mPyramidsOptionsWidget; }
+    QStringList createOptions() const { return mSaveOptionsWidget->options(); }
+    QgsRasterFormatSaveOptionsWidget* createOptionsWidget() { return mSaveOptionsWidget; }
     const QList<int> overviewList() const { return mOverviewList; }
     QgsRasterDataProvider::RasterPyramidsFormat pyramidsFormat() const
     { return ( QgsRasterDataProvider::RasterPyramidsFormat ) cbxPyramidsFormat->currentIndex(); }
@@ -52,15 +52,15 @@ class GUI_EXPORT QgsRasterPyramidsOptionsWidget: public QWidget,
 
     void on_cbxPyramidsLevelsCustom_toggled( bool toggled );
     void on_cbxPyramidsFormat_currentIndexChanged( int index )
-    { mPyramidsOptionsWidget->setEnabled( index != 2 ); }
+    { mSaveOptionsWidget->setEnabled( index != 2 ); }
     void setOverviewList();
+    void updateUi();
 
   signals:
     void overviewListChanged();
+    void someValueChanged(); /* emitted when any other setting changes */
 
   private:
-
-    void updateUi();
 
     QString mProvider;
     QList< int > mOverviewList;

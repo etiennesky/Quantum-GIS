@@ -255,9 +255,10 @@ class QgsRasterDataProvider : QgsDataProvider, QgsRasterInterface
                                 int theSampleSize = 0 );
 
     /** \brief Create pyramid overviews */
-    virtual QString buildPyramids( const QList<QgsRasterPyramid>  & thePyramidList,
-                                   const QString &  theResamplingMethod = "NEAREST",
-                                   RasterPyramidsFormat theFormat = PyramidsGTiff );
+    virtual QString buildPyramids( const QList<QgsRasterPyramid> & thePyramidList,
+                                   const QString & theResamplingMethod = "NEAREST",
+                                   RasterPyramidsFormat theFormat = PyramidsGTiff,
+                                   const QStringList & theConfigOptions = QStringList() );
 
     /** \brief Accessor for ths raster layers pyramid list.
      * @param overviewList used to construct the pyramid list (optional), when empty the list is defined by the provider.
@@ -425,9 +426,15 @@ class QgsRasterDataProvider : QgsDataProvider, QgsRasterInterface
     /** Returns the pyramid resampling argument that corresponds to a given method */
     static QString pyramidResamplingArg( QString method, QString providerKey = "gdal" );
 
-    /** Validates creation options for a specific dataset and destination format - used by GDAL provider only.
-     * See also validateCreationOptionsFormat() in gdal provider for validating options based on format only. */
+    /** Validates creation options for a specific dataset and destination format.
+     * @note used by GDAL provider only
+     * @note see also validateCreationOptionsFormat() in gdal provider for validating options based on format only */
     virtual QString validateCreationOptions( const QStringList& createOptions, QString format );
+
+    /** Validates pyramid creation options for a specific dataset and destination format
+     * @note used by GDAL provider only */
+    virtual QString validatePyramidsConfigOptions( RasterPyramidsFormat pyramidsFormat,
+        const QStringList & theConfigOptions, const QString & fileFormat );
 
   signals:
     /** Emit a signal to notify of the progress event.

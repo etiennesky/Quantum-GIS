@@ -39,9 +39,8 @@ QgsRasterPyramidsOptionsWidget::QgsRasterPyramidsOptionsWidget( QWidget* parent,
   setupUi( this );
 
   mSaveOptionsWidget->setProvider( provider );
-  mSaveOptionsWidget->setFormat( "_pyramids" );
-  // mSaveOptionsWidget->swapOptionsUI( 1 );
-  // mSaveOptionsWidget->setType( QgsRasterFormatSaveOptionsWidget::ProfileLineEdit );
+  mSaveOptionsWidget->setPyramidsFormat( QgsRasterDataProvider::PyramidsGTiff );
+  mSaveOptionsWidget->setType( QgsRasterFormatSaveOptionsWidget::ProfileLineEdit );
 
   updateUi();
 }
@@ -76,8 +75,6 @@ void QgsRasterPyramidsOptionsWidget::updateUi()
   // validate string, only space-separated positive integers are allowed
   lePyramidsLevels->setEnabled( cbxPyramidsLevelsCustom->isChecked() );
   lePyramidsLevels->setValidator( new QRegExpValidator( QRegExp( "(\\d*)(\\s\\d*)*" ), lePyramidsLevels ) );
-  // connect( lePyramidsLevels, SIGNAL( editingFinished() ),
-  //          this, SLOT( setOverviewList() ) );
   connect( lePyramidsLevels, SIGNAL( textEdited( const QString & ) ),
            this, SLOT( setOverviewList() ) );
 
@@ -165,6 +162,12 @@ void QgsRasterPyramidsOptionsWidget::on_cbxPyramidsLevelsCustom_toggled( bool to
   foreach ( int i, mOverviewCheckBoxes.keys() )
     mOverviewCheckBoxes[ i ]->setEnabled( ! toggled );
   setOverviewList();
+}
+
+void QgsRasterPyramidsOptionsWidget::on_cbxPyramidsFormat_currentIndexChanged( int index )
+{
+  mSaveOptionsWidget->setEnabled( index != 2 );
+  mSaveOptionsWidget->setPyramidsFormat(( QgsRasterDataProvider::RasterPyramidsFormat ) index );
 }
 
 void QgsRasterPyramidsOptionsWidget::setOverviewList()

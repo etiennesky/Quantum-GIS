@@ -81,6 +81,7 @@ class GdalToolsDialog(QWidget, Ui_Widget, BasePluginWidget):
       Utils.FileFilter.setLastUsedRasterFilter(lastUsedFilter)
 
       self.inSelector.setFilename(inputFile)
+      self.getArguments()
 
   def fillOutputFileEdit(self):
       lastUsedFilter = Utils.FileFilter.lastUsedRasterFilter()
@@ -100,6 +101,7 @@ class GdalToolsDialog(QWidget, Ui_Widget, BasePluginWidget):
       self.configSelector.setFilename(configFile)
 
   def getArguments(self):
+      print('getArguments')
       mode = self.modes[ self.modeCombo.currentIndex() ]
       arguments = QStringList()
       arguments << mode
@@ -143,6 +145,13 @@ class GdalToolsDialog(QWidget, Ui_Widget, BasePluginWidget):
         #  arguments << "-co" << opt
         for opt in self.creationOptionsWidget.options():
           arguments << "-co" << opt
+
+      # set creation options filename/layer for validation
+      if self.inSelector.layer():
+        self.creationOptionsWidget.setRasterLayer(self.inSelector.layer())
+      else:
+        self.creationOptionsWidget.setRasterFileName(self.getInputFileName())
+
       return arguments
 
   def getInputFileName(self):
@@ -154,3 +163,4 @@ class GdalToolsDialog(QWidget, Ui_Widget, BasePluginWidget):
   def addLayerIntoCanvas(self, fileInfo):
       self.iface.addRasterLayer(fileInfo.filePath())
 
+  def setCreationOptionsLayer(self):

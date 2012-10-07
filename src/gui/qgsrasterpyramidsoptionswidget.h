@@ -36,12 +36,15 @@ class GUI_EXPORT QgsRasterPyramidsOptionsWidget: public QWidget,
     QgsRasterPyramidsOptionsWidget( QWidget* parent = 0, QString provider = "gdal" );
     ~QgsRasterPyramidsOptionsWidget();
 
-    QStringList createOptions() const { return mSaveOptionsWidget->options(); }
+    QStringList configOptions() const { return mSaveOptionsWidget->options(); }
     QgsRasterFormatSaveOptionsWidget* createOptionsWidget() { return mSaveOptionsWidget; }
     const QList<int> overviewList() const { return mOverviewList; }
     QgsRasterDataProvider::RasterPyramidsFormat pyramidsFormat() const
     { return ( QgsRasterDataProvider::RasterPyramidsFormat ) cbxPyramidsFormat->currentIndex(); }
     QString resamplingMethod() const;
+    void setRasterLayer( QgsRasterLayer* rasterLayer ) { mSaveOptionsWidget->setRasterLayer( rasterLayer ); }
+    void setRasterFileName( const QString& file ) { mSaveOptionsWidget->setRasterFileName( file ); }
+
 
   public slots:
 
@@ -51,8 +54,7 @@ class GUI_EXPORT QgsRasterPyramidsOptionsWidget: public QWidget,
   private slots:
 
     void on_cbxPyramidsLevelsCustom_toggled( bool toggled );
-    void on_cbxPyramidsFormat_currentIndexChanged( int index )
-    { mSaveOptionsWidget->setEnabled( index != 2 ); }
+    void on_cbxPyramidsFormat_currentIndexChanged( int index );
     void setOverviewList();
     void updateUi();
 

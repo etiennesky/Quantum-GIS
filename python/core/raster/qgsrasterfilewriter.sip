@@ -32,17 +32,23 @@ class QgsRasterFileWriter
     WriterError writeRaster( const QgsRasterPipe* pipe, int nCols, int nRows, QgsRectangle outputExtent,
                              const QgsCoordinateReferenceSystem& crs, QProgressDialog* p = 0 );
 
-    void setOutputFormat( const QString& format );
-    QString outputFormat() const;
-
-    void setOutputProviderKey( const QString& key );
     QString outputProviderKey() const;
+    void setOutputProviderKey( const QString& key );
 
-    void setTiledMode( bool t );
+    QString outputFormat() const;
+    void setOutputFormat( const QString& format );
+
+    QStringList createOptions() const;
+    void setCreateOptions( const QStringList& list );
+
     bool tiledMode() const;
+    void setTiledMode( bool t );
 
-    void setMaxTileWidth( int w );
     int maxTileWidth() const;
+    void setMaxTileWidth( int w );
+
+    int maxTileHeight() const;
+    void setMaxTileHeight( int h );
 
     QgsRasterDataProvider::RasterBuildPyramids buildPyramidsFlag() const;
     void setBuildPyramidsFlag( QgsRasterDataProvider::RasterBuildPyramids f );
@@ -56,11 +62,7 @@ class QgsRasterFileWriter
     QgsRasterDataProvider::RasterPyramidsFormat pyramidsFormat() const;
     void setPyramidsFormat( QgsRasterDataProvider::RasterPyramidsFormat f );
 
-    void setMaxTileHeight( int h );
-    int maxTileHeight() const;
-
-    // for now not putting createOptions in all methods, use createOptions()
-    void setCreateOptions( const QStringList& list );
-    QStringList createOptions() const;
+    QStringList pyramidsConfigOptions() const;
+    void setPyramidsConfigOptions( const QStringList& list );
 };
 

@@ -47,6 +47,7 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
       self.connect( self.inSelector, SIGNAL( "selectClicked()" ), self.fillInputFile )
       self.connect( self.batchCheck, SIGNAL( "stateChanged( int )" ), self.switchToolMode )
 
+      self.init = False #workaround bug that pyramid options widgets are not initialized at first
 
   # switch to batch or normal mode
   def switchToolMode( self ):
@@ -85,6 +86,7 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
         return
 
       self.inSelector.setFilename( inputDir )
+      self.mPyramidOptionsWidget.setRasterLayer(None)
 
   def getArguments( self ):
       arguments = QStringList()
@@ -109,7 +111,7 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
       #  arguments << "--config" << "COMPRESS_OVERVIEW" << "JPEG" << "--config" << "PHOTOMETRIC_OVERVIEW" << "YCBCR" << "--config" << "INTERLEAVE_OVERVIEW" << "PIXEL"
       #  if self.jpegQualityContainer.isVisible():
       #      arguments << "--config" << "JPEG_QUALITY_OVERVIEW" << self.jpegQualitySpin.cleanText()
-      for option in self.mPyramidOptionsWidget.createOptions():
+      for option in self.mPyramidOptionsWidget.configOptions():
         (k,v) = option.split("=")
         arguments << "--config" << str(k) << str(v)
 
@@ -129,6 +131,17 @@ class GdalToolsDialog( QWidget, Ui_Widget, BaseBatchWidget ):
         arguments << "[levels]"
       for level in self.mPyramidOptionsWidget.overviewList():
         arguments << str(level)
+        
+      # set creation options filename/layer for validation
+      if self.init:
+        if self.isBatchEnabled():
+          self.mPyramidOptionsWidget.setRasterLayer(None)
+        elif self.inSelector.layer():
+          self.mPyramidOptionsWidget.setRasterLayer(self.inSelector.layer())
+        else:
+          self.mPyramidOptionsWidget.setRasterFileName(self.getInputFileName())
+      else:
+        self.init = True
 
       return arguments
 

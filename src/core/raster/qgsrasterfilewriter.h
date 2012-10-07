@@ -56,17 +56,23 @@ class CORE_EXPORT QgsRasterFileWriter
     WriterError writeRaster( const QgsRasterPipe* pipe, int nCols, int nRows, QgsRectangle outputExtent,
                              const QgsCoordinateReferenceSystem& crs, QProgressDialog* p = 0 );
 
-    void setOutputFormat( const QString& format ) { mOutputFormat = format; }
-    QString outputFormat() const { return mOutputFormat; }
-
-    void setOutputProviderKey( const QString& key ) { mOutputProviderKey = key; }
     QString outputProviderKey() const { return mOutputProviderKey; }
+    void setOutputProviderKey( const QString& key ) { mOutputProviderKey = key; }
 
-    void setTiledMode( bool t ) { mTiledMode = t; }
+    QString outputFormat() const { return mOutputFormat; }
+    void setOutputFormat( const QString& format ) { mOutputFormat = format; }
+
+    QStringList createOptions() const { return mCreateOptions; }
+    void setCreateOptions( const QStringList& list ) { mCreateOptions = list; }
+
     bool tiledMode() const { return mTiledMode; }
+    void setTiledMode( bool t ) { mTiledMode = t; }
 
-    void setMaxTileWidth( int w ) { mMaxTileWidth = w; }
     int maxTileWidth() const { return mMaxTileWidth; }
+    void setMaxTileWidth( int w ) { mMaxTileWidth = w; }
+
+    int maxTileHeight() const { return mMaxTileHeight; }
+    void setMaxTileHeight( int h ) { mMaxTileHeight = h; }
 
     QgsRasterDataProvider::RasterBuildPyramids buildPyramidsFlag() const { return mBuildPyramidsFlag; }
     void setBuildPyramidsFlag( QgsRasterDataProvider::RasterBuildPyramids f ) { mBuildPyramidsFlag = f; }
@@ -80,12 +86,8 @@ class CORE_EXPORT QgsRasterFileWriter
     QgsRasterDataProvider::RasterPyramidsFormat pyramidsFormat() const { return mPyramidsFormat; }
     void setPyramidsFormat( QgsRasterDataProvider::RasterPyramidsFormat f ) { mPyramidsFormat = f; }
 
-    void setMaxTileHeight( int h ) { mMaxTileHeight = h; }
-    int maxTileHeight() const { return mMaxTileHeight; }
-
-    // for now not putting createOptions in all methods, use createOptions()
-    void setCreateOptions( const QStringList& list ) { mCreateOptions = list; }
-    QStringList createOptions() const { return mCreateOptions; }
+    QStringList pyramidsConfigOptions() const { return mPyramidsConfigOptions; }
+    void setPyramidsConfigOptions( const QStringList& list ) { mPyramidsConfigOptions = list; }
 
   private:
     QgsRasterFileWriter(); //forbidden
@@ -146,6 +148,7 @@ class CORE_EXPORT QgsRasterFileWriter
     QString mPyramidsResampling;
     QgsRasterDataProvider::RasterBuildPyramids mBuildPyramidsFlag;
     QgsRasterDataProvider::RasterPyramidsFormat mPyramidsFormat;
+    QStringList mPyramidsConfigOptions;
 
     QDomDocument mVRTDocument;
     QDomElement mVRTRedBand;

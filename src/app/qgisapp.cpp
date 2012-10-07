@@ -4090,9 +4090,10 @@ void QgisApp::saveAsRasterFile()
 
     // TODO add pyramids create options
     fileWriter.setBuildPyramidsFlag( d.buildPyramidsFlag() );
-    fileWriter.setPyramidsList( d.overviewList() );
-    fileWriter.setPyramidsResampling( d.pyramidsResampling() );
+    fileWriter.setPyramidsList( d.pyramidsList() );
+    fileWriter.setPyramidsResampling( d.pyramidsResamplingMethod() );
     fileWriter.setPyramidsFormat( d.pyramidsFormat() );
+    fileWriter.setPyramidsConfigOptions( d.pyramidsConfigOptions() );
 
     fileWriter.writeRaster( pipe, d.nColumns(), d.nRows(), d.outputRectangle(), d.outputCrs(), &pd );
     delete pipe;

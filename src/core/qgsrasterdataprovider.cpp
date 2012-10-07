@@ -374,13 +374,13 @@ void QgsRasterDataProvider::initPyramidResamplingDefs()
   mPyramidResamplingListGdal.clear();
   mPyramidResamplingListGdal << tr( "Nearest Neighbour" ) << tr( "Average" ) << tr( "Gauss" ) << tr( "Cubic" ) << tr( "Mode" ) << tr( "None" ); // << tr( "Average magphase" )
   mPyramidResamplingMapGdal.clear();
-  mPyramidResamplingMapGdal[ tr( "Nearest Neighbour" )] = "nearest";
-  mPyramidResamplingMapGdal[ tr( "Average" )] = "average";
-  mPyramidResamplingMapGdal[ tr( "Gauss" )] = "gauss";
-  mPyramidResamplingMapGdal[ tr( "Cubic" )] = "cubic";
-  mPyramidResamplingMapGdal[ tr( "Mode" )] = "mode";
+  mPyramidResamplingMapGdal[ tr( "Nearest Neighbour" )] = "NEAREST";
+  mPyramidResamplingMapGdal[ tr( "Average" )] = "AVERAGE";
+  mPyramidResamplingMapGdal[ tr( "Gauss" )] = "GAUSS";
+  mPyramidResamplingMapGdal[ tr( "Cubic" )] = "CUBIC";
+  mPyramidResamplingMapGdal[ tr( "Mode" )] = "MODE";
   // mPyramidResamplingMapGdal[ tr( "Average magphase" ) ] = "average_magphase";
-  mPyramidResamplingMapGdal[ tr( "None" )] = "none" ;
+  mPyramidResamplingMapGdal[ tr( "None" )] = "NONE" ;
 }
 
 QStringList QgsRasterDataProvider::pyramidResamplingMethods( QString providerKey )
@@ -401,8 +401,8 @@ QString QgsRasterDataProvider::pyramidResamplingArg( QString method, QString pro
 
   if ( mPyramidResamplingMapGdal.contains( method ) )
     return mPyramidResamplingMapGdal.value( method );
-  else
-    return method.toLower();
+
+  return "NEAREST";
 }
 
 

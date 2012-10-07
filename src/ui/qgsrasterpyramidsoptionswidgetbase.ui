@@ -34,12 +34,12 @@
      </property>
      <item>
       <property name="text">
-       <string>Internal (if possible)</string>
+       <string>External (GTiff .ovr)</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>External (GTiff .ovr)</string>
+       <string>Internal (if possible)</string>
       </property>
      </item>
      <item>

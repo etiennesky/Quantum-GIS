@@ -1,5 +1,5 @@
 /***************************************************************************
-    qgsogrsublayersdialog.h  - dialog for selecting ogr sublayers
+    qgssublayersdialog.h  - dialog for selecting sublayers
     ---------------------
     begin                : January 2009
     copyright            : (C) 2009 by Florian El Ahdab
@@ -13,25 +13,39 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef QGSOGRSUBLAYERSDIALOG_H
-#define QGSOGRSUBLAYERSDIALOG_H
+#ifndef QGSSUBLAYERSDIALOG_H
+#define QGSSUBLAYERSDIALOG_H
 
 #include <QDialog>
-#include <ui_qgsogrsublayersdialogbase.h>
+#include <ui_qgssublayersdialogbase.h>
 #include "qgscontexthelp.h"
 
-class QgsOGRSublayersDialog : public QDialog, private Ui::QgsOGRSublayersDialogBase
+class QgsSublayersDialog : public QDialog, private Ui::QgsSublayersDialogBase
 {
     Q_OBJECT
   public:
-    QgsOGRSublayersDialog( QWidget* parent = 0, Qt::WFlags fl = 0 );
-    ~QgsOGRSublayersDialog();
+
+    enum SublayersType
+    {
+      Ogr = 0,
+      Gdal = 1,
+      Zip = 2,
+      Other = 3
+    };
+
+    QgsSublayersDialog( QWidget* parent = 0, SublayersType type = Ogr,
+                        QString name = "OGR", Qt::WFlags fl = 0 );
+    ~QgsSublayersDialog();
     void populateLayerTable( QStringList theList, QString delim = ":" );
     QStringList getSelection();
     QList<int> getSelectionIndexes();
 
   public slots:
     void on_buttonBox_helpRequested() { QgsContextHelp::run( metaObject()->className() ); }
+
+  protected:
+    SublayersType mType;
+    QString mName;
 };
 
 #endif

@@ -148,7 +148,6 @@ SET(QGIS_APP_SRCS
   ogr/qgsogrhelperfunctions.cpp
   ogr/qgsopenvectorlayerdialog.cpp
   ogr/qgsnewogrconnection.cpp
-  ogr/qgsogrsublayersdialog.cpp
   ogr/qgsvectorlayersaveasdialog.cpp
 
   gps/qgsgpsinformationwidget.cpp
@@ -286,7 +285,6 @@ SET (QGIS_APP_MOC_HDRS
 
   ogr/qgsopenvectorlayerdialog.h
   ogr/qgsnewogrconnection.h
-  ogr/qgsogrsublayersdialog.h
   ogr/qgsvectorlayersaveasdialog.h
 
   gps/qgsgpsinformationwidget.h

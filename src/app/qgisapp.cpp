@@ -7435,25 +7435,41 @@ bool QgisApp::addRasterLayer( QgsRasterLayer *theRasterLayer )
   return true;
 }
 
+// Open a raster layer - this is the generic function which takes all parameters
+// this method is a blend of addRasterLayer() functions (with and without provider)
+// and addRasterLayers()
 
-//create a raster layer object and delegate to addRasterLayer(QgsRasterLayer *)
-
-QgsRasterLayer* QgisApp::addRasterLayer( QString const & rasterFile, QString const & baseName, bool guiWarning )
+QgsRasterLayer* QgisApp::addRasterLayerPrivate(
+  const QString & uri, const QString & baseName, const QString & providerKey,
+  bool guiWarning, bool guiUpdate )
 {
   if ( mMapCanvas && mMapCanvas->isDrawing() )
   {
     return NULL;
   }
 
-  // let the user know we're going to possibly be taking a while
-  QApplication::setOverrideCursor( Qt::WaitCursor );
+  if ( guiUpdate )
+  {
+    // let the user know we're going to possibly be taking a while
+    // QApplication::setOverrideCursor( Qt::WaitCursor );
 
-  mMapCanvas->freeze( true );
+    mMapCanvas->freeze( true );
+  }
 
+  QgsDebugMsg( "Creating new raster layer using " + uri
+               + " with baseName of " + baseName );
+
+  QgsRasterLayer *layer = 0;
   // XXX ya know QgsRasterLayer can snip out the basename on its own;
   // XXX why do we have to pass it in for it?
-  QgsRasterLayer *layer =
-    new QgsRasterLayer( rasterFile, baseName ); // fi.completeBaseName());
+  // ET : we may not be getting "normal" files here, so we still need the baseName argument
+  if ( providerKey.isEmpty() )
+    layer = new QgsRasterLayer( uri, baseName ); // fi.completeBaseName());
+  else
+    layer = new QgsRasterLayer( uri, baseName, providerKey );
+
+  QgsDebugMsg( "Constructed new layer" );
+
   QgsError error;
   QString title;
   bool ok = false;
@@ -7473,7 +7489,7 @@ QgsRasterLayer* QgisApp::addRasterLayer( QString const & rasterFile, QString con
       // TODO fix this - provider is not deleted in ~QgsRasterLayer()
       delete layer->dataProvider();
       delete layer;
-      layer = 0;
+      layer = NULL;
     }
   }
   else
@@ -7489,11 +7505,8 @@ QgsRasterLayer* QgisApp::addRasterLayer( QString const & rasterFile, QString con
 
   if ( !ok )
   {
-    mMapCanvas->freeze( false );
-    QApplication::restoreOverrideCursor();
-
-// Let render() do its own cursor management
-//    QApplication::restoreOverrideCursor();
+    if ( guiUpdate )
+      mMapCanvas->freeze( false );
 
     // don't show the gui warning if we are loading from command line
     if ( guiWarning )
@@ -7502,26 +7515,39 @@ QgsRasterLayer* QgisApp::addRasterLayer( QString const & rasterFile, QString con
     }
 
     if ( layer )
+    {
+      // TODO fix this - provider is not deleted in ~QgsRasterLayer()
+      delete layer->dataProvider();
       delete layer;
-
-    return NULL;
+      layer = NULL;
+    }
   }
-  else
+
+  if ( guiUpdate )
   {
-    statusBar()->showMessage( mMapCanvas->extent().toString( 2 ) );
+    // update UI
+    qApp->processEvents();
+    // draw the map
     mMapCanvas->freeze( false );
-    QApplication::restoreOverrideCursor();
-
-// Let render() do its own cursor management
-//    QApplication::restoreOverrideCursor();
-
     mMapCanvas->refresh();
+    //update status
+    statusBar()->showMessage( mMapCanvas->extent().toString( 2 ) );
 
-    return layer;
+    // Let render() do its own cursor management
+    //    QApplication::restoreOverrideCursor();
   }
+
+  return layer;
 
 } // QgisApp::addRasterLayer
 
+//create a raster layer object and delegate to addRasterLayer(QgsRasterLayer *)
+
+QgsRasterLayer* QgisApp::addRasterLayer(
+  QString const & rasterFile, QString const & baseName, bool guiWarning )
+{
+  return addRasterLayerPrivate( rasterFile, baseName, QString(), guiWarning, true );
+}
 
 
 /** Add a raster layer directly without prompting user for location
@@ -7534,47 +7560,10 @@ QgsRasterLayer* QgisApp::addRasterLayer( QString const & rasterFile, QString con
   \note   Copied from the equivalent addVectorLayer function in this file
   */
 QgsRasterLayer* QgisApp::addRasterLayer(
-  QString const &uri,
-  QString const &baseName,
-  QString const &providerKey )
+  QString const &uri, QString const &baseName, QString const &providerKey )
 {
-  QgsDebugMsg( "about to get library for " + providerKey );
-
-  if ( mMapCanvas && mMapCanvas->isDrawing() )
-  {
-    return 0;
-  }
-
-  mMapCanvas->freeze();
-
-  // create the layer
-  QgsRasterLayer *layer;
-  QgsDebugMsg( "Creating new raster layer using " + uri
-               + " with baseName of " + baseName );
-
-  layer = new QgsRasterLayer( uri, baseName, providerKey );
-
-  QgsDebugMsg( "Constructed new layer." );
-
-  if ( layer->isValid() )
-  {
-    addRasterLayer( layer );
-
-    statusBar()->showMessage( mMapCanvas->extent().toString( 2 ) );
-  }
-  else
-  {
-    QgsErrorDialog::show( layer->error(), tr( "Invalid Layer" ) );
-  }
-
-  // update UI
-  qApp->processEvents();
-  // draw the map
-  mMapCanvas->freeze( false );
-  mMapCanvas->refresh();
-
-  return layer;
-} // QgisApp::addRasterLayer
+  return addRasterLayerPrivate( uri, baseName, providerKey, true, true );
+}
 
 
 //create a raster layer object and delegate to addRasterLayer(QgsRasterLayer *)
@@ -7596,9 +7585,6 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
 
   mMapCanvas->freeze( true );
 
-// Let render() do its own cursor management
-//  QApplication::setOverrideCursor(Qt::WaitCursor);
-
   // this is messy since some files in the list may be rasters and others may
   // be ogr layers. We'll set returnValue to false if one or more layers fail
   // to load.
@@ -7608,8 +7594,6 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
         ++myIterator )
   {
     QString errMsg;
-    QgsError error;
-    QString title;
     bool ok = false;
 
     // if needed prompt for zipitem layers
@@ -7632,37 +7616,12 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
       //time to prevent the user selecting all adfs in 1 dir which
       //actually represent 1 coverage,
 
-      // create the layer
-      QgsRasterLayer *layer = new QgsRasterLayer( *myIterator, myBaseNameQString );
+      // try to create the layer
+      QgsRasterLayer *layer = addRasterLayerPrivate( *myIterator, myBaseNameQString,
+                              QString(), guiWarning, true );
 
-      if ( !layer->isValid() )
+      if ( layer && layer->isValid() )
       {
-        error = layer->error();
-        title = tr( "Invalid Layer" );
-
-        if ( shouldAskUserForGDALSublayers( layer ) )
-        {
-          askUserForGDALSublayers( layer );
-          ok = true;
-
-          // The first layer loaded is not useful in that case. The user can select it in
-          // the list if he wants to load it.
-          // TODO fix this - provider is not deleted in ~QgsRasterLayer()
-          delete layer->dataProvider();
-          delete layer;
-          layer = 0;
-        }
-      } // invalid layer
-      else
-      {
-        ok = addRasterLayer( layer );
-        if ( !ok )
-        {
-          error.append( QGS_ERROR_MESSAGE( tr( "Error adding valid layer to map canvas" ),
-                                           tr( "Raster layer" ) ) );
-          title = tr( "Error" );
-        }
-
         //only allow one copy of a ai grid file to be loaded at a
         //time to prevent the user selecting all adfs in 1 dir which
         //actually represent 1 coverate,
@@ -7672,30 +7631,33 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
           break;
         }
       }
+      // else - addRasterLayerPrivate() will show the error
+
     } // valid raster filename
     else
     {
-      QString msg = tr( "%1 is not a supported raster data source" ).arg( *myIterator );
-      if ( errMsg.size() > 0 )
-        msg += "\n" + errMsg;
-
-      error.append( QGS_ERROR_MESSAGE( msg, tr( "Raster layer" ) ) );
-      title = tr( "Unsupported Data Source" );
       ok = false;
-    }
-
-    if ( ! ok )
-    {
-      returnValue = false;
 
       // Issue message box warning unless we are loading from cmd line since
       // non-rasters are passed to this function first and then successfully
       // loaded afterwards (see main.cpp)
       if ( guiWarning )
       {
-        QgsErrorDialog::show( error, title );
-      }
+        QgsError error;
+        QString msg;
 
+        msg = tr( "%1 is not a supported raster data source" ).arg( *myIterator );
+        if ( errMsg.size() > 0 )
+          msg += "\n" + errMsg;
+        error.append( QGS_ERROR_MESSAGE( msg, tr( "Raster layer" ) ) );
+
+        QgsErrorDialog::show( error, tr( "Unsupported Data Source" ) );
+      }
+    }
+
+    if ( ! ok )
+    {
+      returnValue = false;
     }
   }
 

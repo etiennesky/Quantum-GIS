@@ -150,6 +150,18 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
   bool is_vsigzip = ( vsiPrefix == "/vsigzip/" );
   bool is_vsitar = ( vsiPrefix == "/vsitar/" );
 
+  // should we check ext. only?
+  // check if scanItemsInBrowser2 == extension or parent dir in scanItemsFastScanUris
+  // TODO - do this in dir item, but this requires a way to inform which extensions are supported by provider
+  // maybe a callback function or in the provider registry?
+  bool scanExtSetting = false;
+  if ( settings.value( "/qgis/scanItemsInBrowser2",
+                       "extension" ).toString() == "extension" )
+    scanExtSetting = true;
+  else if ( settings.value( "/qgis/scanItemsFastScanUris",
+                            QStringList() ).toStringList().contains( parentItem->path() ) )
+    scanExtSetting = true;
+
   // get suffix, removing .gz if present
   QString tmpPath = thePath; //path used for testing, not for layer creation
   if ( is_vsigzip )
@@ -212,13 +224,11 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
     }
   }
 
-  // return a /vsizip/ item without testing if:
+  // return item without testing if:
   // zipfile and scan zip == "Basic scan"
-  // not zipfile and scan items == "Check extension"
+  // not zipfile and scanExtSetting=true
   if ((( is_vsizip || is_vsitar ) && scanZipSetting == "basic" ) ||
-      ( !is_vsizip && !is_vsitar &&
-        ( settings.value( "/qgis/scanItemsInBrowser2",
-                          "extension" ).toString() == "extension" ) ) )
+      ( !is_vsizip && !is_vsitar && scanExtSetting ) )
   {
     // if this is a VRT file make sure it is raster VRT to avoid duplicates
     if ( suffix == "vrt" )
@@ -267,4 +277,3 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
 
   return item;
 }
-

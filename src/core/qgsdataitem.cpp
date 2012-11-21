@@ -473,9 +473,14 @@ QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
     QFileInfo fileInfo( path );
 
     QString vsiPrefix = QgsZipItem::vsiPrefix( path );
+    // scan zip item if scanZipInBrowser2==yes and this directory not in scanItemsFastScanUris
     // vsizip support was added to GDAL/OGR 1.6 but GDAL_VERSION_NUM not available here
-    if (( settings.value( "/qgis/scanZipInBrowser2", QVariant( "basic" ) ).toString() != "no" ) &&
-        ( vsiPrefix == "/vsizip/" || vsiPrefix == "/vsitar/" ) )
+    //   so we assume it's available anyway
+    if (( vsiPrefix == "/vsizip/" || vsiPrefix == "/vsitar/" ) &&
+        ( settings.value( "/qgis/scanZipInBrowser2", QVariant( "basic" ) ).toString() != "no" ) &&
+        ! settings.value( "/qgis/scanItemsFastScanUris",
+                          QStringList() ).toStringList().contains( mPath )
+       )
     {
       QgsDataItem * item = QgsZipItem::itemFromPath( this, path, name );
       if ( item )

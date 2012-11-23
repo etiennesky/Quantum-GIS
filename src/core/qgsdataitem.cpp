@@ -200,13 +200,13 @@ void QgsDataItem::populate()
   QApplication::restoreOverrideCursor();
 }
 
-int QgsDataItem::rowCount()
+int QgsDataItem::rowCount() const
 {
   // if ( !mPopulated )
   //   populate();
   return mChildren.size();
 }
-bool QgsDataItem::hasChildren()
+bool QgsDataItem::hasChildren() const
 {
   return ( mPopulated ? mChildren.count() > 0 : true );
 }
@@ -370,14 +370,37 @@ QgsMapLayer::LayerType QgsLayerItem::mapLayerType()
 
 bool QgsLayerItem::equal( const QgsDataItem *other )
 {
-  //QgsDebugMsg ( mPath + " x " + other->mPath );
+  QgsDebugMsgLevel( mPath + " x " + other->path(), 2 );
   if ( type() != other->type() )
-  {
     return false;
-  }
-  //const QgsLayerItem *o = qobject_cast<const QgsLayerItem *> ( other );
+
+  // layerItem comparison
   const QgsLayerItem *o = dynamic_cast<const QgsLayerItem *>( other );
-  return ( mPath == o->mPath && mName == o->mName && mUri == o->mUri && mProviderKey == o->mProviderKey );
+
+  // basic test: matching name, uri and provider
+  if ( !( mPath == o->mPath && mName == o->mName && mUri == o->mUri && mProviderKey == o->mProviderKey ) )
+    return false;
+
+  // check matching children, if any (perhaps other classes need this check)
+  if ( this->hasChildren() || other->hasChildren() )
+  {
+    QgsDebugMsgLevel( QString( "rowCount: %1 x %2" ).arg( this->rowCount() ).arg( other->rowCount() ), 2 );
+    if ( this->rowCount() != other->rowCount() )
+      return false;
+    QgsDebugMsgLevel( QString( "hiddenChildCount: %1 x %2" ).arg( this->hiddenChildCount() ).arg( other->hiddenChildCount() ), 2 );
+    if ( this->hiddenChildCount() != other->hiddenChildCount() )
+      return false;
+    // this not tested...
+    QVector<QgsDataItem*> thisChildren = this->children();
+    QVector<QgsDataItem*> otherChildren = other->children();
+    for ( int i = 0; i < thisChildren.count(); i++ )
+    {
+      if ( !( thisChildren[i] )->equal( otherChildren[i] ) )
+        return false;
+    }
+  }
+  QgsDebugMsgLevel( "equal", 2 );
+  return true;
 }
 
 // ---------------------------------------------------------------------

@@ -54,11 +54,12 @@ class CORE_EXPORT QgsDataItem : public QObject
     QgsDataItem( QgsDataItem::Type type, QgsDataItem* parent, QString name, QString path );
     virtual ~QgsDataItem();
 
-    bool hasChildren();
+    bool hasChildren() const;
 
-    int rowCount();
+    int rowCount() const;
 
-    //
+    // how many children this item has which are not loaded?
+    virtual int hiddenChildCount() const { return 0; }
 
     virtual void refresh();
 

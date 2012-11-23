@@ -433,7 +433,9 @@ void QgsBrowserDockWidget::refreshModel( const QModelIndex& index )
   for ( int i = 0 ; i < mModel->rowCount( index ); i++ )
   {
     QModelIndex idx = mModel->index( i, 0, index );
-    if ( mBrowserView->isExpanded( idx ) || !mModel->hasChildren( idx ) )
+    QModelIndex proxyIdx = mProxyModel->mapFromSource( idx );
+    // QgsDebugMsg( QString( "child #%1 expanded: %2 hasChildren: %3" ).arg( i ).arg( mBrowserView->isExpanded( proxyIdx ) ).arg( mModel->hasChildren( proxyIdx ) ) );
+    if ( mBrowserView->isExpanded( proxyIdx ) || !mModel->hasChildren( proxyIdx ) )
     {
       refreshModel( idx );
     }
@@ -454,7 +456,6 @@ void QgsBrowserDockWidget::addLayer( QgsLayerItem *layerItem )
 
   QgsDebugMsg( providerKey + " : " + uri );
 
-  // TODO use QgsDataSource/QgsSublayersDialog directly
   if ( type == QgsMapLayer::VectorLayer )
   {
     QgisApp::instance()->addVectorLayer( uri, layerItem->layerName(), providerKey );

@@ -212,23 +212,24 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WFlags fl ) :
 
   spinBoxAttrTableRowCache->setValue( settings.value( "/qgis/attributeTableRowCache", 10000 ).toInt() );
 
-  // set the prompt for raster sublayers
-  // 0 = Always -> always ask (if there are existing sublayers)
-  // 1 = If needed -> ask if layer has no bands, but has sublayers
-  // 2 = Never -> never prompt, will not load anything
-  // 3 = Load all -> never prompt, but load all sublayers
-  cmbPromptRasterSublayers->clear();
-  cmbPromptRasterSublayers->addItem( tr( "Always" ) );
-  cmbPromptRasterSublayers->addItem( tr( "If needed" ) ); //this means, prompt if there are sublayers but no band in the main dataset
-  cmbPromptRasterSublayers->addItem( tr( "Never" ) );
-  cmbPromptRasterSublayers->addItem( tr( "Load all" ) );
-  cmbPromptRasterSublayers->setCurrentIndex( settings.value( "/qgis/promptForRasterSublayers", 0 ).toInt() );
+  // set the prompt for sublayers (raster, vector, zip/tar)
+  // yes -> always ask (if there are existing sublayers)
+  // no -> never prompt, will not load anything
+  // all -> never prompt, but load all sublayers
+  cmbPromptSublayers->clear();
+  cmbPromptSublayers->addItem( tr( "Yes" ), "yes" );
+  // cmbPromptSublayers->addItem( tr( "If needed" ) ); //this means, prompt if there are sublayers but no band in the main dataset (removed)
+  cmbPromptSublayers->addItem( tr( "No" ), "no" );
+  cmbPromptSublayers->addItem( tr( "Load all" ), "all" );
+  int index = cmbPromptSublayers->findData( settings.value( "/qgis/promptForSublayers", "yes" ) );
+  if ( index == -1 ) index = 1;
+  cmbPromptSublayers->setCurrentIndex( index );
 
   // Scan for valid items in the browser dock
   cmbScanItemsInBrowser->clear();
   cmbScanItemsInBrowser->addItem( tr( "Check file contents" ), "contents" ); // 0
   cmbScanItemsInBrowser->addItem( tr( "Check extension" ), "extension" );    // 1
-  int index = cmbScanItemsInBrowser->findData( settings.value( "/qgis/scanItemsInBrowser2", "" ) );
+  index = cmbScanItemsInBrowser->findData( settings.value( "/qgis/scanItemsInBrowser2", "" ) );
   if ( index == -1 ) index = 1;
   cmbScanItemsInBrowser->setCurrentIndex( index );
 
@@ -880,7 +881,8 @@ void QgsOptions::saveOptions()
   settings.setValue( "/qgis/dockAttributeTable", cbxAttributeTableDocked->isChecked() );
   settings.setValue( "/qgis/attributeTableBehaviour", cmbAttrTableBehaviour->currentIndex() );
   settings.setValue( "/qgis/attributeTableRowCache", spinBoxAttrTableRowCache->value() );
-  settings.setValue( "/qgis/promptForRasterSublayers", cmbPromptRasterSublayers->currentIndex() );
+  settings.setValue( "/qgis/promptForSublayers",
+                     cmbPromptSublayers->itemData( cmbPromptSublayers->currentIndex() ).toString() );
   settings.setValue( "/qgis/scanItemsInBrowser2",
                      cmbScanItemsInBrowser->itemData( cmbScanItemsInBrowser->currentIndex() ).toString() );
   settings.setValue( "/qgis/scanZipInBrowser2",

@@ -65,9 +65,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>0</y>
+            <y>-370</y>
             <width>770</width>
-            <height>1062</height>
+            <height>961</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -757,7 +757,7 @@
                    </sizepolicy>
                   </property>
                   <property name="text">
-                   <string>Prompt for raster sublayers</string>
+                   <string>Prompt for sublayers</string>
                   </property>
                  </widget>
                 </item>
@@ -775,7 +775,7 @@
                  </spacer>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="cmbPromptRasterSublayers">
+                 <widget class="QComboBox" name="cmbPromptSublayers">
                   <property name="duplicatesEnabled">
                    <bool>false</bool>
                   </property>
@@ -1045,8 +1045,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1010</width>
-            <height>815</height>
+            <width>831</width>
+            <height>742</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
@@ -1560,8 +1560,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>770</width>
-            <height>757</height>
+            <width>519</width>
+            <height>703</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_4">
@@ -1950,8 +1950,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>786</width>
-            <height>585</height>
+            <width>240</width>
+            <height>82</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_10">
@@ -2031,8 +2031,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>770</width>
-            <height>606</height>
+            <width>565</width>
+            <height>542</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_13">
@@ -2407,8 +2407,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>786</width>
-            <height>585</height>
+            <width>547</width>
+            <height>400</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
@@ -2594,8 +2594,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>786</width>
-            <height>585</height>
+            <width>519</width>
+            <height>540</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_17">
@@ -2691,8 +2691,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>786</width>
-            <height>585</height>
+            <width>418</width>
+            <height>511</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_20">

@@ -105,6 +105,7 @@ SET(QGIS_CORE_SRCS
   qgscoordinatereferencesystem.cpp
   qgstolerance.cpp
   qgsvectordataprovider.cpp
+  qgsdatasource.cpp
   qgsvectorfilewriter.cpp
   qgsvectorlayer.cpp
   qgsvectorlayerimport.cpp
@@ -396,6 +397,7 @@ SET(QGIS_CORE_HDRS
   qgsscalecalculator.h
   qgssnapper.h
   qgscoordinatereferencesystem.h
+  qgsdatasource.h
   qgsvectordataprovider.h
   qgsvectorfilewriter.h
   qgsvectorlayer.h

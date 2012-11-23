@@ -344,5 +344,4 @@ class CORE_EXPORT QgsDataProvider : public QObject
     QString mDataSourceURI;
 };
 
-
 #endif

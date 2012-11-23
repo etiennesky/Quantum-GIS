@@ -19,33 +19,39 @@
 #include <QDialog>
 #include <ui_qgssublayersdialogbase.h>
 #include "qgscontexthelp.h"
+#include "qgsdatasource.h"
+
 
 class QgsSublayersDialog : public QDialog, private Ui::QgsSublayersDialogBase
 {
     Q_OBJECT
   public:
 
-    enum SublayersType
-    {
-      Ogr = 0,
-      Gdal = 1,
-      Zip = 2,
-      Other = 3
-    };
-
-    QgsSublayersDialog( QWidget* parent = 0, SublayersType type = Ogr,
-                        QString name = "OGR", Qt::WFlags fl = 0 );
+    QgsSublayersDialog( QgsDataSource* dataSource, QWidget* parent = 0, Qt::WFlags fl = 0 );
     ~QgsSublayersDialog();
+
     void populateLayerTable( QStringList theList, QString delim = ":" );
-    QStringList getSelection();
-    QList<int> getSelectionIndexes();
+    QStringList selectionNames();
+    QList<int> selectionIndexes();
+    QStringList selectionUris();
+
+    /* tries to load a QgsDataSource for the given uri and providers(s)
+     * if the dataSource contains many layers, prompts user to select which ones to add
+     * and then adds selection to the map registry
+     * does NOT update the mapCanvas
+     * returns a list of layers created, an empty list if user declined */
+    static QList<QgsMapLayer *> addDataSourceLayers( QWidget* parent, QString baseUri, QgsMapLayer::LayerType type, QStringList providerKeys );
+    static QList<QgsMapLayer *> addDataSourceLayers( QWidget* parent, QString baseUri, QgsMapLayer::LayerType type = QgsMapLayer::PluginLayer )
+    { return addDataSourceLayers( parent, baseUri, type, QStringList() ); }
 
   public slots:
     void on_buttonBox_helpRequested() { QgsContextHelp::run( metaObject()->className() ); }
+    int exec();
 
   protected:
-    SublayersType mType;
     QString mName;
+    QgsDataSource* mDataSource;
+    QStringList mSelectedSubLayers;
 };
 
 #endif

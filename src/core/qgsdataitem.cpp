@@ -34,9 +34,8 @@
 #include "qgslogger.h"
 #include "qgsproviderregistry.h"
 #include "qgsconfig.h"
+#include "qgsdatasource.h"
 
-// use GDAL VSI mechanism
-#include "cpl_vsi.h"
 #include "cpl_string.h"
 
 // shared icons
@@ -472,7 +471,7 @@ QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
     QString path = dir.absoluteFilePath( name );
     QFileInfo fileInfo( path );
 
-    QString vsiPrefix = QgsZipItem::vsiPrefix( path );
+    QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( path );
     // scan zip item if scanZipInBrowser2==yes and this directory not in scanItemsFastScanUris
     // vsizip support was added to GDAL/OGR 1.6 but GDAL_VERSION_NUM not available here
     //   so we assume it's available anyway
@@ -729,7 +728,7 @@ QgsZipItem::QgsZipItem( QgsDataItem* parent, QString name, QString path )
 {
   mType = Collection; //Zip??
   mIcon = iconZip();
-  mVsiPrefix = vsiPrefix( path );
+  mVsiPrefix = QgsVsifileDataSource::vsiPrefix( path );
 
   if ( mProviderNames.size() == 0 )
   {
@@ -940,23 +939,6 @@ QVector<QgsDataItem*> QgsZipItem::createChildren( )
   return children;
 }
 
-QString QgsZipItem::vsiPrefix( QString path )
-{
-  if ( path.startsWith( "/vsizip/", Qt::CaseInsensitive ) ||
-       path.endsWith( ".zip", Qt::CaseInsensitive ) )
-    return "/vsizip/";
-  else if ( path.startsWith( "/vsitar/", Qt::CaseInsensitive ) ||
-            path.endsWith( ".tar", Qt::CaseInsensitive ) ||
-            path.endsWith( ".tar.gz", Qt::CaseInsensitive ) ||
-            path.endsWith( ".tgz", Qt::CaseInsensitive ) )
-    return "/vsitar/";
-  else if ( path.startsWith( "/vsigzip/", Qt::CaseInsensitive ) ||
-            path.endsWith( ".gz", Qt::CaseInsensitive ) )
-    return "/vsigzip/";
-  else
-    return "";
-}
-
 QgsDataItem* QgsZipItem::itemFromPath( QgsDataItem* parent, QString path, QString name )
 {
   QSettings settings;
@@ -965,7 +947,7 @@ QgsDataItem* QgsZipItem::itemFromPath( QgsDataItem* parent, QString path, QStrin
   int zipFileCount = 0;
   QStringList zipFileList;
   QFileInfo fileInfo( path );
-  QString vsiPrefix = QgsZipItem::vsiPrefix( path );
+  QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( path );
   QgsZipItem * zipItem = 0;
   bool populated = false;
 

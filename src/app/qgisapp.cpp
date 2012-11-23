@@ -188,6 +188,7 @@
 #include "qgsmessagelogviewer.h"
 #include "qgsdataitem.h"
 
+#include "qgsdatasource.h"
 #include "qgssublayersdialog.h"
 #include "ogr/qgsopenvectorlayerdialog.h"
 #include "ogr/qgsvectorlayersaveasdialog.h"
@@ -2405,6 +2406,16 @@ void QgisApp::addVectorLayer()
 
 bool QgisApp::addVectorLayers( QStringList const & theLayerQStringList, const QString& enc, const QString dataSourceType )
 {
+  if ( mMapCanvas && mMapCanvas->isDrawing() )
+  {
+    return NULL;
+  }
+
+  mMapCanvas->freeze();
+
+// Let render() do its own cursor management
+//  QApplication::setOverrideCursor(Qt::WaitCursor);
+
   QList<QgsMapLayer *> myList;
   foreach ( QString src, theLayerQStringList )
   {
@@ -2416,13 +2427,7 @@ bool QgisApp::addVectorLayers( QStringList const & theLayerQStringList, const QS
       base = fi.completeBaseName();
 
       // if needed prompt for zipitem layers
-      QString vsiPrefix = QgsZipItem::vsiPrefix( src );
-      if ( ! src.startsWith( "/vsi", Qt::CaseInsensitive ) &&
-           ( vsiPrefix == "/vsizip/" || vsiPrefix == "/vsitar/" ) )
-      {
-        if ( askUserForZipItemLayers( src ) )
-          continue;
-      }
+      // this in QgsDataSource/QgsSublayersDialog now
     }
     else if ( dataSourceType == "database" )
     {
@@ -2436,62 +2441,74 @@ bool QgisApp::addVectorLayers( QStringList const & theLayerQStringList, const QS
 
     QgsDebugMsg( "completeBaseName: " + base );
 
-    // create the layer
+    // create the layer(s)
 
-    QgsVectorLayer *layer = new QgsVectorLayer( src, base, "ogr" );
-    Q_CHECK_PTR( layer );
+    QgsDebugMsg( QString( "Trying to create a QgsDataSource from %1 with providers [%2]" ).arg( src, "ogr" ) );
 
-    if ( ! layer )
+    QgsDataSource *dataSource = QgsDataSource::open( src, QgsMapLayer::VectorLayer, "ogr" ); //base is dropped...
+
+    if ( dataSource )
     {
-      mMapCanvas->freeze( false );
+      QgsDebugMsg( QString( "got dataSource with %1 sublayers : %2" ).arg( dataSource->layerNames().count() ).arg( dataSource->layerNames().join( " " ) ) );
+      QgsDebugMsg( QString( "sublayer uris : %1" ).arg( dataSource->layerUris().join( " " ) ) );
 
-      // Let render() do its own cursor management
-      //      QApplication::restoreOverrideCursor();
+      QgsSublayersDialog chooseSublayersDialog( dataSource, this );
+      chooseSublayersDialog.exec();
+      myList << dataSource->addLayers( chooseSublayersDialog.selectionNames(), false );
 
-      // XXX insert meaningful whine to the user here
-      return false;
+      delete dataSource;
     }
 
-    if ( layer->isValid() )
+    else
     {
-      layer->setProviderEncoding( enc );
+      QgsVectorLayer *layer = new QgsVectorLayer( src, base, "ogr" );
+      Q_CHECK_PTR( layer );
 
-      QStringList sublayers = layer->dataProvider()->subLayers();
-
-      // If the newly created layer has more than 1 layer of data available, we show the
-      // sublayers selection dialog so the user can select the sublayers to actually load.
-      if ( sublayers.count() > 1 )
+      if ( ! layer )
       {
-        askUserForOGRSublayers( layer );
+        // hmm why bail out when only one layer is null
+        mMapCanvas->freeze( false );
 
-        // The first layer loaded is not useful in that case. The user can select it in
-        // the list if he wants to load it.
-        delete layer;
+        // Let render() do its own cursor management
+        //      QApplication::restoreOverrideCursor();
 
+        // XXX insert meaningful whine to the user here
+        return false;
       }
-      else if ( sublayers.count() > 0 ) // there is 1 layer of data available
+
+      if ( layer->isValid() )
       {
-        //set friendly name for datasources with only one layer
+        layer->setProviderEncoding( enc );
+
         QStringList sublayers = layer->dataProvider()->subLayers();
-        QString ligne = sublayers.at( 0 );
-        QStringList elements = ligne.split( ":" );
-        layer->setLayerName( elements.at( 1 ) );
-        myList << layer;
+
+        // if ( sublayers.count() > 1 )
+        //   askUserForOGRSublayers( layer );
+        // this in QgsDataSource/QgsSublayersDialog now
+
+        if ( sublayers.count() > 0 ) // there is 1 layer of data available
+        {
+          //set friendly name for datasources with only one layer
+          QString ligne = sublayers.at( 0 );
+          QStringList elements = ligne.split( ":" );
+          layer->setLayerName( elements.at( 1 ) );
+          myList << layer;
+        }
+        else
+        {
+          QString msg = tr( "%1 doesn't have any layers" ).arg( src );
+          QMessageBox::critical( this, tr( "Invalid Data Source" ), msg );
+          delete layer;
+        }
       }
       else
       {
-        QString msg = tr( "%1 doesn't have any layers" ).arg( src );
+        QString msg = tr( "%1 is not a valid or recognized data source" ).arg( src );
         QMessageBox::critical( this, tr( "Invalid Data Source" ), msg );
+
+        // since the layer is bad, stomp on it
         delete layer;
       }
-    }
-    else
-    {
-      QString msg = tr( "%1 is not a valid or recognized data source" ).arg( src );
-      QMessageBox::critical( this, tr( "Invalid Data Source" ), msg );
-
-      // since the layer is bad, stomp on it
-      delete layer;
     }
 
   }
@@ -2520,281 +2537,6 @@ bool QgisApp::addVectorLayers( QStringList const & theLayerQStringList, const QS
   return true;
 } // QgisApp::addVectorLayer()
 
-// present a dialog to choose zipitem layers
-bool QgisApp::askUserForZipItemLayers( QString path )
-{
-  bool ok = false;
-  QVector<QgsDataItem*> childItems;
-  QgsZipItem *zipItem = 0;
-  QSettings settings;
-  int promptLayers = settings.value( "/qgis/promptForRasterSublayers", 1 ).toInt();
-
-  QgsDebugMsg( "askUserForZipItemLayers( " + path + ")" );
-
-  // if scanZipBrowser == no: skip to the next file
-  if ( settings.value( "/qgis/scanZipInBrowser2", "basic" ).toString() == "no" )
-  {
-    return false;
-  }
-
-  zipItem = new QgsZipItem( 0, path, path );
-  if ( ! zipItem )
-    return false;
-
-  zipItem->populate();
-  QgsDebugMsg( QString( "Path= %1 got zipitem with %2 children" ).arg( path ).arg( zipItem->rowCount() ) );
-
-  // if 1 or 0 child found, exit so a normal item is created by gdal or ogr provider
-  if ( zipItem->rowCount() <= 1 )
-  {
-    delete zipItem;
-    return false;
-  }
-
-  // if promptLayers=Load all, load all layers without prompting
-  if ( promptLayers == 3 )
-  {
-    childItems = zipItem->children();
-  }
-  // exit if promptLayers=Never
-  else if ( promptLayers == 2 )
-  {
-    delete zipItem;
-    return false;
-  }
-  else
-  {
-    // We initialize a selection dialog and display it.
-    QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Zip, "ZIP" );
-    chooseSublayersDialog.setWindowTitle( tr( "Select zip layers to add..." ) );
-
-    QStringList layers;
-    for ( int i = 0; i < zipItem->children().size(); i++ )
-    {
-      QgsDataItem *item = zipItem->children()[i];
-      QgsLayerItem *layerItem = dynamic_cast<QgsLayerItem *>( item );
-      QgsDebugMsgLevel( QString( "item path=%1 provider=%2" ).arg( item->path() ).arg( layerItem->providerKey() ), 2 );
-      if ( layerItem && layerItem->providerKey() == "gdal" )
-      {
-        layers << QString( "%1|%2|%3" ).arg( i ).arg( item->name() ).arg( "Raster" );
-      }
-      else if ( layerItem && layerItem->providerKey() == "ogr" )
-      {
-        layers << QString( "%1|%2|%3" ).arg( i ).arg( item->name() ).arg( tr( "Vector" ) );
-      }
-    }
-
-    chooseSublayersDialog.populateLayerTable( layers, "|" );
-
-    if ( chooseSublayersDialog.exec() )
-    {
-      foreach ( int i, chooseSublayersDialog.getSelectionIndexes() )
-      {
-        childItems << zipItem->children()[i];
-      }
-    }
-  }
-
-  if ( childItems.isEmpty() )
-  {
-    // return true so dialog doesn't popup again (#6225) - hopefully this doesn't create other trouble
-    ok = true;
-  }
-
-  // add childItems
-  foreach ( QgsDataItem* item, childItems )
-  {
-    QgsLayerItem *layerItem = dynamic_cast<QgsLayerItem *>( item );
-    QgsDebugMsg( QString( "item path=%1 provider=%2" ).arg( item->path() ).arg( layerItem->providerKey() ) );
-    if ( layerItem && layerItem->providerKey() == "gdal" )
-    {
-      if ( addRasterLayer( item->path(), QFileInfo( item->name() ).completeBaseName() ) )
-        ok = true;
-    }
-    else if ( layerItem && layerItem->providerKey() == "ogr" )
-    {
-      if ( addVectorLayers( QStringList( item->path() ), "System", "file" ) )
-        ok = true;
-    }
-  }
-
-  delete zipItem;
-  return ok;
-}
-
-// present a dialog to choose GDAL raster sublayers
-void QgisApp::askUserForGDALSublayers( QgsRasterLayer *layer )
-{
-  if ( !layer )
-    return;
-
-  QStringList sublayers = layer->subLayers();
-  QgsDebugMsg( QString( "raster has %1 sublayers" ).arg( layer->subLayers().size() ) );
-
-  if ( sublayers.size() < 1 )
-    return;
-
-  // if promptLayers=Load all, load all sublayers without prompting
-  QSettings settings;
-  if ( settings.value( "/qgis/promptForRasterSublayers", 1 ).toInt() == 3 )
-  {
-    loadGDALSublayers( layer->source(), sublayers );
-    return;
-  }
-
-  // We initialize a selection dialog and display it.
-  QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Gdal, "GDAL" );
-  chooseSublayersDialog.setWindowTitle( tr( "Select raster layers to add..." ) );
-
-  QStringList layers;
-  QStringList names;
-  for ( int i = 0; i < sublayers.size(); i++ )
-  {
-    // simplify raster sublayer name - should add a function in gdal provider for this?
-    // code is copied from QgsGdalLayerItem::createChildren
-    QString name = sublayers[i];
-    QString path = layer->source();
-    // if netcdf/hdf use all text after filename
-    // for hdf4 it would be best to get description, because the subdataset_index is not very practical
-    if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
-         name.startsWith( "hdf", Qt::CaseInsensitive ) )
-      name = name.mid( name.indexOf( path ) + path.length() + 1 );
-    else
-    {
-      // remove driver name and file name
-      name.replace( name.split( ":" )[0], "" );
-      name.replace( path, "" );
-    }
-    // remove any : or " left over
-    if ( name.startsWith( ":" ) ) name.remove( 0, 1 );
-    if ( name.startsWith( "\"" ) ) name.remove( 0, 1 );
-    if ( name.endsWith( ":" ) ) name.chop( 1 );
-    if ( name.endsWith( "\"" ) ) name.chop( 1 );
-
-    names << name;
-    layers << QString( "%1|%2" ).arg( i ).arg( name );
-  }
-
-  chooseSublayersDialog.populateLayerTable( layers, "|" );
-
-  if ( chooseSublayersDialog.exec() )
-  {
-    foreach ( int i, chooseSublayersDialog.getSelectionIndexes() )
-    {
-      QgsRasterLayer *rlayer = new QgsRasterLayer( sublayers[i], names[i] );
-      if ( rlayer && rlayer->isValid() )
-      {
-        addRasterLayer( rlayer );
-      }
-    }
-  }
-}
-
-// should the GDAL sublayers dialog should be presented to the user?
-bool QgisApp::shouldAskUserForGDALSublayers( QgsRasterLayer *layer )
-{
-  // return false if layer is empty or raster has no sublayers
-  if ( !layer || layer->providerType() != "gdal" || layer->subLayers().size() < 1 )
-    return false;
-
-  QSettings settings;
-  int promptLayers = settings.value( "/qgis/promptForRasterSublayers", 1 ).toInt();
-  // 0 = Always -> always ask (if there are existing sublayers)
-  // 1 = If needed -> ask if layer has no bands, but has sublayers
-  // 2 = Never -> never prompt, will not load anything
-  // 3 = Load all -> never prompt, but load all sublayers
-
-  return promptLayers == 0 || promptLayers == 3 || ( promptLayers == 1 && layer->bandCount() == 0 );
-}
-
-// This method will load with GDAL the layers in parameter.
-// It is normally triggered by the sublayer selection dialog.
-void QgisApp::loadGDALSublayers( QString uri, QStringList list )
-{
-  QString path, name;
-  QgsRasterLayer *subLayer = NULL;
-
-  //add layers in reverse order so they appear in the right order in the layer dock
-  for ( int i = list.size() - 1; i >= 0 ; i-- )
-  {
-    path = list[i];
-    // shorten name by replacing complete path with filename
-    name = path;
-    name.replace( uri, QFileInfo( uri ).completeBaseName() );
-    subLayer = new QgsRasterLayer( path, name );
-    if ( subLayer )
-    {
-      if ( subLayer->isValid() )
-        addRasterLayer( subLayer );
-      else
-        delete subLayer;
-    }
-
-  }
-}
-
-// This method is the method that does the real job. If the layer given in
-// parameter is NULL, then the method tries to act on the activeLayer.
-void QgisApp::askUserForOGRSublayers( QgsVectorLayer *layer )
-{
-  if ( !layer )
-  {
-    layer = qobject_cast<QgsVectorLayer *>( activeLayer() );
-    if ( !layer || layer->dataProvider()->name() != "ogr" )
-      return;
-  }
-
-  QStringList sublayers = layer->dataProvider()->subLayers();
-  QString layertype = layer->dataProvider()->storageType();
-
-  // We initialize a selection dialog and display it.
-  QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Ogr, "OGR" );
-  chooseSublayersDialog.setWindowTitle( tr( "Select vector layers to add..." ) );
-  chooseSublayersDialog.populateLayerTable( sublayers );
-
-  if ( chooseSublayersDialog.exec() )
-  {
-    QString uri = layer->source();
-    //the separator char & was changed to | to be compatible
-    //with url for protocol drivers
-    if ( uri.contains( '|', Qt::CaseSensitive ) )
-    {
-      // If we get here, there are some options added to the filename.
-      // A valid uri is of the form: filename&option1=value1&option2=value2,...
-      // We want only the filename here, so we get the first part of the split.
-      QStringList theURIParts = uri.split( "|" );
-      uri = theURIParts.at( 0 );
-    }
-    QgsDebugMsg( "Layer type " + layertype );
-    // the user has done his choice
-    loadOGRSublayers( layertype , uri, chooseSublayersDialog.getSelection() );
-  }
-}
-
-// This method will load with OGR the layers  in parameter.
-// This method has been conceived to use the new URI
-// format of the ogrprovider so as to give precisions about which
-// sublayer to load into QGIS. It is normally triggered by the
-// sublayer selection dialog.
-void QgisApp::loadOGRSublayers( QString layertype, QString uri, QStringList list )
-{
-  // The uri must contain the actual uri of the vectorLayer from which we are
-  // going to load the sublayers.
-  QString fileName = QFileInfo( uri ).baseName();
-  for ( int i = 0; i < list.size(); i++ )
-  {
-    QString composedURI;
-    if ( layertype != "GRASS" )
-    {
-      composedURI = uri + "|layername=" + list.at( i );
-    }
-    else
-    {
-      composedURI = uri + "|layerindex=" + list.at( i );
-    }
-    addVectorLayer( composedURI,  list.at( i ), "ogr" );
-  }
-}
 
 #ifndef HAVE_POSTGRESQL
 void QgisApp::addDatabaseLayer() {}
@@ -3563,18 +3305,16 @@ bool QgisApp::openLayer( const QString & fileName, bool allowInteractive )
   CPLPushErrorHandler( CPLQuietErrorHandler );
 
   // if needed prompt for zipitem layers
-  QString vsiPrefix = QgsZipItem::vsiPrefix( fileName );
-  if ( vsiPrefix == "/vsizip/" || vsiPrefix == "/vsitar/" )
-  {
-    if ( askUserForZipItemLayers( fileName ) )
-    {
-      CPLPopErrorHandler();
-      return true;
-    }
+  // this in QgsDataSource now
+
+  // try using new QgsDataSource using all available providers
+  if ( QgsSublayersDialog::addDataSourceLayers( this, fileName ).count() >= 0 )
+  { // do nothing, layers were added
+    ok = true;
   }
 
   // try to load it as raster
-  if ( QgsRasterLayer::isValidRasterFileName( fileName ) )
+  else if ( QgsRasterLayer::isValidRasterFileName( fileName ) )
   {
     ok  = addRasterLayer( fileName, fileInfo.completeBaseName() );
   }
@@ -5565,6 +5305,7 @@ void QgisApp::showPluginManager()
   {
     QgsPluginRegistry* pRegistry = QgsPluginRegistry::instance();
     // load selected plugins
+    // hmm use std::vector instead of QVector???
     std::vector < QgsPluginItem > pi = pm->getSelectedPlugins();
     std::vector < QgsPluginItem >::iterator it = pi.begin();
     while ( it != pi.end() )
@@ -5944,36 +5685,47 @@ QgsVectorLayer* QgisApp::addVectorLayer( QString vectorLayerPath, QString baseNa
 // Let render() do its own cursor management
 //  QApplication::setOverrideCursor(Qt::WaitCursor);
 
-  /* Eliminate the need to instantiate the layer based on provider type.
-     The caller is responsible for cobbling together the needed information to
-     open the layer
-     */
-  QgsDebugMsg( "Creating new vector layer using " + vectorLayerPath
-               + " with baseName of " + baseName
-               + " and providerKey of " + providerKey );
+  QgsVectorLayer *layer = 0;
 
-  // create the layer
-  QgsVectorLayer *layer = new QgsVectorLayer( vectorLayerPath, baseName, providerKey );
-
-  if ( layer && layer->isValid() )
-  {
-    // Register this layer with the layers registry
-    QList<QgsMapLayer *> myList;
-    myList << layer;
-    QgsMapLayerRegistry::instance()->addMapLayers( myList );
-    statusBar()->showMessage( mMapCanvas->extent().toString( 2 ) );
-
+  // try using new QgsDataSource/QgsSublayersDialog
+  if ( QgsSublayersDialog::addDataSourceLayers( this, vectorLayerPath, QgsMapLayer::VectorLayer,
+       QStringList( providerKey ) ).count() >= 0 )
+  { // do nothing, layers were added
   }
   else
   {
-    QMessageBox::critical( this, tr( "Layer is not valid" ),
-                           tr( "The layer %1 is not a valid layer and can not be added to the map" ).arg( vectorLayerPath ) );
 
-    delete layer;
-    mMapCanvas->freeze( false );
-    return NULL;
+    /* Eliminate the need to instantiate the layer based on provider type.
+       The caller is responsible for cobbling together the needed information to
+       open the layer
+       */
+    QgsDebugMsg( "Creating new vector layer using " + vectorLayerPath
+                 + " with baseName of " + baseName
+                 + " and providerKey of " + providerKey );
+
+    // create the layer
+    layer = new QgsVectorLayer( vectorLayerPath, baseName, providerKey );
+
+    if ( layer && layer->isValid() )
+    {
+      // Register this layer with the layers registry
+      QList<QgsMapLayer *> myList;
+      myList << layer;
+      QgsMapLayerRegistry::instance()->addMapLayers( myList );
+      statusBar()->showMessage( mMapCanvas->extent().toString( 2 ) );
+
+    }
+    else
+    {
+      QMessageBox::critical( this, tr( "Layer is not valid" ),
+                             tr( "The layer %1 is not a valid layer and can not be added to the map" ).arg( vectorLayerPath ) );
+
+      delete layer;
+      mMapCanvas->freeze( false );
+      return NULL;
+    }
+
   }
-
   // update UI
   qApp->processEvents();
 
@@ -7456,50 +7208,48 @@ QgsRasterLayer* QgisApp::addRasterLayerPrivate(
     mMapCanvas->freeze( true );
   }
 
-  QgsDebugMsg( "Creating new raster layer using " + uri
-               + " with baseName of " + baseName );
-
   QgsRasterLayer *layer = 0;
-  // XXX ya know QgsRasterLayer can snip out the basename on its own;
-  // XXX why do we have to pass it in for it?
-  // ET : we may not be getting "normal" files here, so we still need the baseName argument
-  if ( providerKey.isEmpty() )
-    layer = new QgsRasterLayer( uri, baseName ); // fi.completeBaseName());
-  else
-    layer = new QgsRasterLayer( uri, baseName, providerKey );
-
-  QgsDebugMsg( "Constructed new layer" );
-
+  bool ok = false;
   QgsError error;
   QString title;
-  bool ok = false;
 
-  if ( !layer->isValid() )
-  {
-    error = layer->error();
-    title = tr( "Invalid Layer" );
+  // try using new QgsDataSource
+  if ( QgsSublayersDialog::addDataSourceLayers( this, uri, QgsMapLayer::RasterLayer,
+       QStringList( providerKey ) ).count() >= 0 )
 
-    if ( shouldAskUserForGDALSublayers( layer ) )
-    {
-      askUserForGDALSublayers( layer );
-      ok = true;
-
-      // The first layer loaded is not useful in that case. The user can select it in
-      // the list if he wants to load it.
-      // TODO fix this - provider is not deleted in ~QgsRasterLayer()
-      delete layer->dataProvider();
-      delete layer;
-      layer = NULL;
-    }
+  { // do nothing, layers were added
+    ok = true;
   }
+  // fallback to QgsRasterLayer
   else
   {
-    ok = addRasterLayer( layer );
-    if ( !ok )
+    QgsDebugMsg( "Creating new raster layer using " + uri
+                 + " with baseName of " + baseName );
+
+    // XXX ya know QgsRasterLayer can snip out the basename on its own;
+    // XXX why do we have to pass it in for it?
+    // ET : we may not be getting "normal" files here, so we still need the baseName argument
+    if ( providerKey.isEmpty() )
+      layer = new QgsRasterLayer( uri, baseName ); // fi.completeBaseName());
+    else
+      layer = new QgsRasterLayer( uri, baseName, providerKey );
+
+    QgsDebugMsg( "Constructed new layer" );
+
+    if ( !layer->isValid() )
     {
-      error.append( QGS_ERROR_MESSAGE( tr( "Error adding valid layer to map canvas" ),
-                                       tr( "Raster layer" ) ) );
-      title = tr( "Error" );
+      error = layer->error();
+      title = tr( "Invalid Layer" );
+    }
+    else
+    {
+      ok = addRasterLayer( layer );
+      if ( !ok )
+      {
+        error.append( QGS_ERROR_MESSAGE( tr( "Error adding valid layer to map canvas" ),
+                                         tr( "Raster layer" ) ) );
+        title = tr( "Error" );
+      }
     }
   }
 
@@ -7597,15 +7347,11 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
     bool ok = false;
 
     // if needed prompt for zipitem layers
-    QString vsiPrefix = QgsZipItem::vsiPrefix( *myIterator );
-    if ( ! myIterator->startsWith( "/vsi", Qt::CaseInsensitive ) &&
-         ( vsiPrefix == "/vsizip/" || vsiPrefix == "/vsitar/" ) )
-    {
-      if ( askUserForZipItemLayers( *myIterator ) )
-        continue;
-    }
+    // this in QgsDataSource/QgsSublayersDialog now
 
-    if ( QgsRasterLayer::isValidRasterFileName( *myIterator, errMsg ) )
+    // if ( QgsRasterLayer::isValidRasterFileName( *myIterator, errMsg ) )
+    // let it pass for now so we can use QgsDataSource
+    if ( true )
     {
       QFileInfo myFileInfo( *myIterator );
       // get the directory the .adf file was in

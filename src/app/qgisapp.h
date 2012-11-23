@@ -449,8 +449,6 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
                                 (defaults to the active layer on the legend)
      */
     void pasteStyle( QgsMapLayer * destinationLayer = 0 );
-    void loadOGRSublayers( QString layertype, QString uri, QStringList list );
-    void loadGDALSublayers( QString uri, QStringList list );
 
     /**Deletes the selected attributes for the currently selected vector layer*/
     void deleteSelected( QgsMapLayer *layer = 0, QWidget* parent = 0 );
@@ -953,22 +951,6 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     void customSrsValidation( QgsCoordinateReferenceSystem *crs );
 
   private:
-    /** This method will open a dialog so the user can select GDAL sublayers to load
-     * @returns true if any items were loaded
-     * @note added in version 1.9
-     */
-    bool askUserForZipItemLayers( QString path );
-    /** This method will open a dialog so the user can select GDAL sublayers to load
-     * @note added in version 1.8
-     */
-    void askUserForGDALSublayers( QgsRasterLayer *layer );
-    /** This method will verify if a GDAL layer contains sublayers
-     * @note added in version 1.8
-     */
-    bool shouldAskUserForGDALSublayers( QgsRasterLayer *layer );
-    /** This method will open a dialog so the user can select OGR sublayers to load
-    */
-    void askUserForOGRSublayers( QgsVectorLayer *layer );
     /** Add a raster layer to the map (passed in as a ptr).
      * It won't force a refresh.
      */

@@ -32,7 +32,7 @@ class QgsGdalLayerItem : public QgsLayerItem
     bool setCrs( QgsCoordinateReferenceSystem crs );
     Capability capabilities();
 
-    virtual int hiddenChildCount() const;
+    int realChildCount() const { return mSublayers.count(); }
 
     QVector<QgsDataItem*> createChildren();
 

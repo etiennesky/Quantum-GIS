@@ -58,8 +58,8 @@ class CORE_EXPORT QgsDataItem : public QObject
 
     int rowCount() const;
 
-    // how many children this item has which are not loaded?
-    virtual int hiddenChildCount() const { return 0; }
+    // how many children can this item contain? (children are not added until requested)
+    virtual int realChildCount() const { return 0; }
 
     virtual void refresh();
 

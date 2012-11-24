@@ -29,16 +29,21 @@ class QgsOgrLayerItem : public QgsLayerItem
     bool setCrs( QgsCoordinateReferenceSystem crs );
     Capability capabilities();
     QString layerName() const;
+    int realChildCount() const { return 0; }
 };
 
 class QgsOgrDataCollectionItem : public QgsDataCollectionItem
 {
     Q_OBJECT
   public:
-    QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path );
+    QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, int numLayers );
     ~QgsOgrDataCollectionItem();
 
+    int realChildCount() const { return mNumLayers; }
     QVector<QgsDataItem*> createChildren();
+
+  protected:
+    int mNumLayers;
 };
 
 #endif // QGSOGRDATAITEMS_H

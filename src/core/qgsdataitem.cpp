@@ -387,8 +387,8 @@ bool QgsLayerItem::equal( const QgsDataItem *other )
     QgsDebugMsgLevel( QString( "rowCount: %1 x %2" ).arg( this->rowCount() ).arg( other->rowCount() ), 2 );
     if ( this->rowCount() != other->rowCount() )
       return false;
-    QgsDebugMsgLevel( QString( "hiddenChildCount: %1 x %2" ).arg( this->hiddenChildCount() ).arg( other->hiddenChildCount() ), 2 );
-    if ( this->hiddenChildCount() != other->hiddenChildCount() )
+    QgsDebugMsgLevel( QString( "realChildCount: %1 x %2" ).arg( this->realChildCount() ).arg( other->realChildCount() ), 2 );
+    if ( this->realChildCount() != other->realChildCount() )
       return false;
     // this not tested...
     QVector<QgsDataItem*> thisChildren = this->children();

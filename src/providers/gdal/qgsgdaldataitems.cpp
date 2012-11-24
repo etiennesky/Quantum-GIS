@@ -76,11 +76,6 @@ bool QgsGdalLayerItem::setCrs( QgsCoordinateReferenceSystem crs )
   return true;
 }
 
-int QgsGdalLayerItem::hiddenChildCount() const
-{
-  return mPopulated ? 0 : mSublayers.count();
-}
-
 QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
 {
   QgsDebugMsg( "Entered, path=" + path() );

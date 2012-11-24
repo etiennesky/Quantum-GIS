@@ -20,6 +20,9 @@ class QgsDataItem : QObject
 
     int rowCount();
 
+    // how many children can this item contain? (children are not added until requested)
+    virtual int realChildCount() const;
+
     //
 
     virtual void refresh();
@@ -41,7 +44,8 @@ class QgsDataItem : QObject
     // returns pointer to the removed item or null if no such item was found
     virtual QgsDataItem *removeChildItem( QgsDataItem * child ) /TransferBack/;
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
+    virtual bool lessThan( const QgsDataItem *other ) const;
 
     virtual QWidget *paramWidget() /Factory/;
 
@@ -124,7 +128,7 @@ class QgsLayerItem : QgsDataItem
 
     // --- reimplemented from QgsDataItem ---
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
 
     // --- New virtual methods for layer item derived classes ---
 
@@ -188,7 +192,7 @@ class QgsDirectoryItem : QgsDataCollectionItem
 
     QVector<QgsDataItem*> createChildren();
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
 
     virtual QWidget *paramWidget() /Factory/;
 

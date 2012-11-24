@@ -194,6 +194,7 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
      * @note needs further testing - was tested only with netcdf datasets
      * @note added in version 2.0 */
     QStringList subLayerNames() const { return mSubLayerNames; }
+    static QString subLayerName( const QString& theSubLayer );
     static QStringList subLayerNames( GDALDatasetH dataset, const QStringList& theSubLayers );
 
     bool hasStatistics( int theBandNo,

@@ -29,32 +29,48 @@
 // QgsDataSource class
 // -----------------------------------------------------------------------------
 
+QgsDataSource::~QgsDataSource()
+{
+  foreach ( QgsDataSourceLayer* layer, mLayers.values() )
+    delete layer;
+}
+
 QString QgsDataSource::uriForLayer( const QString& layerName ) const
-{ 
-  return mLayerNames.contains( layerName ) ? mLayers.value( layerName ).uri : QString(); 
+{
+  return mLayerNames.contains( layerName ) ? mLayers.value( layerName )->uri : QString();
+}
+
+QgsDataSourceLayer* QgsDataSource::dataSourceLayer( const QString& layerName ) const
+{
+  return mLayerNames.contains( layerName ) ? mLayers.value( layerName ) : NULL;
+}
+
+QgsDataSourceLayer* QgsDataSource::dataSourceLayer( int layerId ) const
+{
+  return mLayerNames.count() >= layerId ? mLayers.value( mLayerNames.at( layerId ) ) : NULL;
 }
 
 QStringList QgsDataSource::layerUris( ) const
 {
   QStringList list;
-  foreach( QString layerName, mLayerNames )
+  foreach ( QString layerName, mLayerNames )
   {
-    list << mLayers.value( layerName ).uri;
+    list << mLayers.value( layerName )->uri;
   }
   return list;
 }
 
 QStringList QgsDataSource::layerInfoHeaders( ) const
-{ 
-  return QStringList() << QObject::tr( "ID" ) << QObject::tr( "Layer name" ); 
-} 
+{
+  return QStringList() << QObject::tr( "ID" ) << QObject::tr( "Layer name" );
+}
 
 QStringList QgsDataSource::layerInfo( ) const
 {
   QStringList list;
-  foreach( QString layerName, mLayerNames )
+  foreach ( QString layerName, mLayerNames )
   {
-    list << mLayers.value( layerName ).info;
+    list << mLayers.value( layerName )->info;
   }
   return list;
 }
@@ -70,17 +86,17 @@ QList<QgsMapLayer *> QgsDataSource::addLayers( const QStringList& layers, bool a
 
   // add layers in reverse order so they appear in the right order in the layer dock
   // for( int i = 0; i < layers.count(); i++ )
-  for( int i = layers.count() - 1 ; i >= 0; i-- )
+  for ( int i = layers.count() - 1 ; i >= 0; i-- )
   {
     if ( ! mLayerNames.contains( layers[i] ) )
       continue;
 
-    QgsDataSourceLayer sourceLayer = mLayers.value( layers[i] );
+    QgsDataSourceLayer* sourceLayer = mLayers.value( layers[i] );
     // depending in type/provider, add raster or vector layer
     // if ( mProviderKey == "gdal" )
-    if ( sourceLayer.type == QgsMapLayer::RasterLayer )
+    if ( sourceLayer && sourceLayer->type == QgsMapLayer::RasterLayer )
     {
-      QgsRasterLayer *layer = new QgsRasterLayer( sourceLayer.uri, sourceLayer.layerName, sourceLayer.providerKey );
+      QgsRasterLayer *layer = new QgsRasterLayer( sourceLayer->uri, sourceLayer->layerName, sourceLayer->providerKey );
       if ( ! layer )
       {
         // XXX insert meaningful whine to the user here; although be
@@ -98,10 +114,10 @@ QList<QgsMapLayer *> QgsDataSource::addLayers( const QStringList& layers, bool a
         delete layer;
       }
     }
-    if ( sourceLayer.type == QgsMapLayer::VectorLayer )
+    if ( sourceLayer && sourceLayer->type == QgsMapLayer::VectorLayer )
     {
       // create the layer
-      QgsVectorLayer *layer = new QgsVectorLayer( sourceLayer.uri, sourceLayer.layerName, sourceLayer.providerKey );
+      QgsVectorLayer *layer = new QgsVectorLayer( sourceLayer->uri, sourceLayer->layerName, sourceLayer->providerKey );
 
       if ( layer->isValid() )
       {
@@ -125,7 +141,7 @@ QList<QgsMapLayer *> QgsDataSource::addLayers( const QStringList& layers, bool a
 // -----------------------------------------------------------------------------
 
 QgsVsifileDataSource::QgsVsifileDataSource( QString baseUri, QgsMapLayer::LayerType type )
-  : QgsDataSource( baseUri, "vsifile" ), mLayerType( type )
+    : QgsDataSource( baseUri, "vsifile" ), mLayerType( type )
 {
   mDataSourceType = VsifileDataSource;
 
@@ -204,8 +220,9 @@ bool QgsVsifileDataSource::loadZipItems()
     }
     mLayerNames << item->name();
     // create QgsDataSourceLayer, with baseName as layerName
-    mLayers[ item->name() ] = QgsDataSourceLayer( item->name(), QFileInfo( item->name() ).baseName(), item->path(), 
-                                                  type, layerItem->providerKey(), info );
+    mLayers[ item->name()] =
+      new QgsDataSourceLayer( item->name(), QFileInfo( item->name() ).baseName(),
+                              item->path(), item->path(), type, layerItem->providerKey(), info );
   }
 
   if ( childItems.isEmpty() )
@@ -225,11 +242,11 @@ QgsVsifileDataSource::~QgsVsifileDataSource()
 {}
 
 QStringList QgsVsifileDataSource::layerInfoHeaders( ) const
-{ 
-  return QStringList() << QObject::tr( "ID" ) << QObject::tr( "Layer name" ) << QObject::tr( "Data type" ); 
-} 
+{
+  return QStringList() << QObject::tr( "ID" ) << QObject::tr( "Layer name" ) << QObject::tr( "Data type" );
+}
 
-QgsVsifileDataSource * QgsVsifileDataSource::dataSource( const QString& uri, QgsMapLayer::LayerType type  )
+QgsVsifileDataSource * QgsVsifileDataSource::dataSource( const QString& uri, QgsMapLayer::LayerType type )
 {
   QgsVsifileDataSource* dataSource = new QgsVsifileDataSource( uri, type );
   if ( ! dataSource->isValid() )
@@ -268,8 +285,8 @@ typedef QgsDataSource * dataSourceFunction_t( const QString & );
 // private function which does the actual work for one provider
 QgsDataSource* _open( QString baseUri, QgsMapLayer::LayerType type, QString providerKey )
 {
-  QgsDebugMsg( QString( "baseUri= %1 type= %2 providerKey= %3" ).arg( baseUri ).arg( (int) type ).arg( providerKey ) );
-  
+  QgsDebugMsg( QString( "baseUri= %1 type= %2 providerKey= %3" ).arg( baseUri ).arg(( int ) type ).arg( providerKey ) );
+
   // if vsifile "provider" try QgsVsifileDataSource, it's not a real provider
   if ( providerKey == "vsifile" )
   {
@@ -331,7 +348,7 @@ QgsDataSource* _open( QString baseUri, QgsMapLayer::LayerType type, QString prov
 
 QgsDataSource* QgsDataSource::open( QString baseUri, QgsMapLayer::LayerType type, QStringList providerKeys )
 {
-  QgsDebugMsg( QString( "baseUri= %1 type= %2 providerKeys= {%3}" ).arg( baseUri ).arg( (int) type ).arg( providerKeys.join( " " ) ) );
+  QgsDebugMsg( QString( "baseUri= %1 type= %2 providerKeys= {%3}" ).arg( baseUri ).arg(( int ) type ).arg( providerKeys.join( " " ) ) );
 
   // first try vsifile prefix, if it fails try actual provider(s)
   if ( ! providerKeys.contains( "vsifile" ) )
@@ -345,18 +362,18 @@ QgsDataSource* QgsDataSource::open( QString baseUri, QgsMapLayer::LayerType type
         return dataSource;
     }
   }
-  
+
   // loop over all available providers if none are given
-  if ( providerKeys.isEmpty() || 
+  if ( providerKeys.isEmpty() ||
        ( providerKeys.count() == 1 && providerKeys[0].isEmpty() ) )
   {
     providerKeys = QgsProviderRegistry::instance()->providerList();
     QgsDebugMsg( QString( "providerKeys was empty, now providerKeys= {%1}" ).arg( providerKeys.join( " " ) ) );
   }
-   
+
   // move gdal and ogr to front (if available)
   // not sure if this is good practice, needs further testing
-  foreach( QString provider, QStringList() << "ogr" << "gdal" )
+  foreach ( QString provider, QStringList() << "ogr" << "gdal" )
   {
     int index = providerKeys.indexOf( provider );
     if ( index != -1 )
@@ -364,18 +381,18 @@ QgsDataSource* QgsDataSource::open( QString baseUri, QgsMapLayer::LayerType type
       providerKeys.removeAt( index );
       providerKeys.prepend( provider );
     }
-  } 
+  }
   // add bogus vsifile provider
   // providerKeys.prepend( "vsifile" );
 
-  QgsDebugMsg( QString( "now %1 providerKeys: {%2}" ).arg( providerKeys.count() ).arg( providerKeys.join( " " ) ) );     
+  QgsDebugMsg( QString( "now %1 providerKeys: {%2}" ).arg( providerKeys.count() ).arg( providerKeys.join( " " ) ) );
   // loop over all providers, return first valid dataSource
   QgsDataSource* dataSource = 0;
-  foreach( QString providerKey, providerKeys )
+  foreach ( QString providerKey, providerKeys )
   {
     if ( providerKey.isEmpty() )
       continue;
-    QgsDebugMsg( QString( "trying with providerKey= %1" ).arg( providerKey ) );   
+    QgsDebugMsg( QString( "trying with providerKey= %1" ).arg( providerKey ) );
 
     // call private _open function
     dataSource = _open( baseUri, type, providerKey );

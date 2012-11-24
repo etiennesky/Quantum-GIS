@@ -31,12 +31,20 @@ QGISEXTERN QStringList fileExtensions();
 QGISEXTERN QStringList wildcards();
 
 
-QgsOgrLayerItem::QgsOgrLayerItem( QgsDataItem* parent,
-                                  QString name, QString path, QString uri, LayerType layerType )
-    : QgsLayerItem( parent, name, path, uri, layerType, "ogr" )
+QgsOgrLayerItem::QgsOgrLayerItem( QgsDataItem* parent, QString name, QString path,
+                                  QString uri, LayerType layerType, QString layerName )
+    : QgsLayerItem( parent, name, path, uri, layerType, "ogr" ), mLayerName( layerName )
 {
   mToolTip = uri;
   mPopulated = true; // children are not expected
+  if ( layerName.isEmpty() )
+  {
+    QFileInfo info( name );
+    if ( info.suffix() == "gz" )
+      mLayerName = info.baseName();
+    else
+      mLayerName = info.completeBaseName();
+  }
 }
 
 QgsOgrLayerItem::~QgsOgrLayerItem()
@@ -123,102 +131,53 @@ bool QgsOgrLayerItem::setCrs( QgsCoordinateReferenceSystem crs )
   return false;
 }
 
-QString QgsOgrLayerItem::layerName() const
-{
-  QFileInfo info( name() );
-  if ( info.suffix() == "gz" )
-    return info.baseName();
-  else
-    return info.completeBaseName();
-}
-
 // -------
 
-static QgsOgrLayerItem* dataItemForLayer( QgsDataItem* parentItem, QString name, QString path, OGRDataSourceH hDataSource, int layerId )
+
+static QgsOgrLayerItem* dataItemForLayer( QgsDataItem* parentItem, QgsOgrDataSource* dataSource, const QString& layerName )
 {
-  OGRLayerH hLayer = OGR_DS_GetLayer( hDataSource, layerId );
-  OGRFeatureDefnH hDef = OGR_L_GetLayerDefn( hLayer );
+  QgsDataSourceLayer* dataLayer = dataSource->dataSourceLayer( layerName );
+  if ( ! dataLayer )
+    return 0;
 
-  QgsLayerItem::LayerType layerType = QgsLayerItem::Vector;
-  int ogrType = QgsOgrProvider::getOgrGeomType( hLayer );
-  switch ( ogrType )
-  {
-    case wkbUnknown:
-    case wkbGeometryCollection:
-      break;
-    case wkbNone:
-      layerType = QgsLayerItem::TableLayer;
-      break;
-    case wkbPoint:
-    case wkbMultiPoint:
-    case wkbPoint25D:
-    case wkbMultiPoint25D:
-      layerType = QgsLayerItem::Point;
-      break;
-    case wkbLineString:
-    case wkbMultiLineString:
-    case wkbLineString25D:
-    case wkbMultiLineString25D:
-      layerType = QgsLayerItem::Line;
-      break;
-    case wkbPolygon:
-    case wkbMultiPolygon:
-    case wkbPolygon25D:
-    case wkbMultiPolygon25D:
-      layerType = QgsLayerItem::Polygon;
-      break;
-    default:
-      break;
-  }
+  QStringList info = dataLayer->info.split( ":" );
+  QString layerTypeName = info.count() >= 3 ? info.at( 3 ) : "";
+  QgsLayerItem::LayerType layerType =  QgsOgrProvider::getGeomType( layerTypeName );
 
-  QgsDebugMsgLevel( QString( "ogrType = %1 layertype = %2" ).arg( ogrType ).arg( layerType ), 2 );
+  QgsDebugMsgLevel( QString( "adding QgsOgrLayerItem [%1] [%2] [%3] [%4] " ).arg( dataLayer->name ).arg( dataLayer->path ).arg( dataLayer->uri ).arg( layerType ), 2 );
 
-  QString layerUri = path;
-
-  if ( name.isEmpty() )
-  {
-    // we are in a collection
-    name = FROM8( OGR_FD_GetName( hDef ) );
-    QgsDebugMsg( "OGR layer name : " + name );
-
-    layerUri += "|layerid=" + QString::number( layerId );
-
-    path += "/" + name;
-  }
-
-  QgsDebugMsgLevel( "OGR layer uri : " + layerUri, 2 );
-
-  return new QgsOgrLayerItem( parentItem, name, path, layerUri, layerType );
+  return new QgsOgrLayerItem( parentItem, dataLayer->name, dataLayer->path, dataLayer->uri, layerType );
 }
+
+static QgsOgrLayerItem* dataItemForLayer( QgsDataItem* parentItem, QgsOgrDataSource* dataSource, int layerId )
+{
+  return dataItemForLayer( parentItem, dataSource, dataSource->layerNames().at( layerId ) );
+}
+
 
 // ----
 
-QgsOgrDataCollectionItem::QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, int numLayers )
-    : QgsDataCollectionItem( parent, name, path ), mNumLayers( numLayers )
+QgsOgrDataCollectionItem::QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, QgsOgrDataSource* dataSource )
+    : QgsDataCollectionItem( parent, name, path ), mDataSource( dataSource )
 {
+  Q_ASSERT( mDataSource != 0 );
 }
 
 QgsOgrDataCollectionItem::~QgsOgrDataCollectionItem()
 {
+  delete mDataSource;
 }
 
 QVector<QgsDataItem*> QgsOgrDataCollectionItem::createChildren()
 {
+  QgsDebugMsg( "Entered, path=" + path() );
+
   QVector<QgsDataItem*> children;
-
-  OGRSFDriverH hDriver;
-  OGRDataSourceH hDataSource = OGROpen( TO8F( mPath ), false, &hDriver );
-  if ( !hDataSource )
-    return children;
-  int numLayers = OGR_DS_GetLayerCount( hDataSource );
-
-  for ( int i = 0; i < numLayers; i++ )
+  for ( int i = 0; i < mDataSource->layerNames().count(); i++ )
   {
-    QgsOgrLayerItem* item = dataItemForLayer( this, QString(), mPath, hDataSource, i );
+    QgsOgrLayerItem* item = dataItemForLayer( this, mDataSource, i );
     children.append( item );
   }
-
-  OGR_DS_Destroy( hDataSource );
 
   return children;
 }
@@ -357,39 +316,28 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
       return item;
   }
 
-  // test that file is valid with OGR
-  OGRRegisterAll();
-  OGRSFDriverH hDriver;
-  // do not print errors, but write to debug
-  CPLPushErrorHandler( CPLQuietErrorHandler );
-  CPLErrorReset();
-  OGRDataSourceH hDataSource = OGROpen( TO8F( thePath ), false, &hDriver );
-  CPLPopErrorHandler();
-
-  if ( ! hDataSource )
-  {
-    QgsDebugMsg( QString( "OGROpen error # %1 : %2 " ).arg( CPLGetLastErrorNo() ).arg( CPLGetLastErrorMsg() ) );
-    return 0;
-  }
-
-  QString  driverName = OGR_Dr_GetName( hDriver );
-  QgsDebugMsgLevel( "OGR Driver : " + driverName, 2 );
-
-  int numLayers = OGR_DS_GetLayerCount( hDataSource );
-
   QgsDataItem* item = 0;
+  QgsOgrDataSource * dataSource = new QgsOgrDataSource( thePath );
 
-  if ( numLayers == 1 )
+  if ( dataSource && dataSource->isValid() )
   {
-    QgsDebugMsgLevel( QString( "using name = %1" ).arg( name ), 2 );
-    item = dataItemForLayer( parentItem, name, thePath, hDataSource, 0 );
+    if ( dataSource->layerUris().count() == 1 )
+    {
+      item = dataItemForLayer( parentItem, dataSource, 0 );
+      delete dataSource;
+    }
+    else if ( dataSource->layerUris().count() > 1 )
+    {
+      item = new QgsOgrDataCollectionItem( parentItem, name, thePath, dataSource );
+    }
+    else
+    {
+      QgsDebugMsg( "data source is valid but has no layers" );
+      delete dataSource;
+    }
   }
-  else if ( numLayers > 1 )
-  {
-    QgsDebugMsgLevel( QString( "using name = %1" ).arg( name ), 2 );
-    item = new QgsOgrDataCollectionItem( parentItem, name, thePath, numLayers );
-  }
+  else if ( dataSource )
+    delete dataSource;
 
-  OGR_DS_Destroy( hDataSource );
   return item;
 }

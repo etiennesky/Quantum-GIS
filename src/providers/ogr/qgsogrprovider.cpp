@@ -191,7 +191,7 @@ QgsVectorLayerImport::ImportError QgsOgrProvider::createEmptyLayer(
 }
 
 
-QgsOgrProvider::QgsOgrProvider( QString const & uri )
+QgsOgrProvider::QgsOgrProvider( QString const & uri, bool openReadOnly )
     : QgsVectorDataProvider( uri )
     , ogrDataSource( 0 )
     , extent_( 0 )
@@ -265,8 +265,6 @@ QgsOgrProvider::QgsOgrProvider( QString const & uri )
     }
   }
 
-  bool openReadOnly = false;
-
   // Try to open using VSIFileHandler
   //   see http://trac.osgeo.org/gdal/wiki/UserDocs/ReadInZip
   QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( uri );
@@ -307,9 +305,8 @@ QgsOgrProvider::QgsOgrProvider( QString const & uri )
 
   if ( ogrDataSource )
   {
-    QgsDebugMsg( "OGR opened using Driver " + QString( OGR_Dr_GetName( ogrDriver ) ) );
-
     ogrDriverName = OGR_Dr_GetName( ogrDriver );
+    QgsDebugMsg( "OGR opened using Driver " + QString( ogrDriverName ) );
 
     // We get the layer which was requested by the uri. The layername
     // has precedence over the layerid if both are given.
@@ -451,6 +448,46 @@ QString QgsOgrProvider::subsetString()
   return mSubsetString;
 }
 
+QString QgsOgrProvider::getGeomName( OGRwkbGeometryType layerGeomType )
+{
+  QString geom;
+  switch ( layerGeomType )
+  {
+    case wkbUnknown:            geom = "Unknown"; break;
+    case wkbPoint:              geom = "Point"; break;
+    case wkbLineString:         geom = "LineString"; break;
+    case wkbPolygon:            geom = "Polygon"; break;
+    case wkbMultiPoint:         geom = "MultiPoint"; break;
+    case wkbMultiLineString:    geom = "MultiLineString"; break;
+    case wkbGeometryCollection: geom = "GeometryCollection"; break;
+    case wkbNone:               geom = "None"; break;
+    case wkbPoint25D:           geom = "Point25D"; break;
+    case wkbLineString25D:      geom = "LineString25D"; break;
+    case wkbPolygon25D:         geom = "Polygon25D"; break;
+    case wkbMultiPoint25D:      geom = "MultiPoint25D"; break;
+    case wkbMultiLineString25D: geom = "MultiLineString25D"; break;
+    case wkbMultiPolygon25D:    geom = "MultiPolygon25D"; break;
+    default:                    geom = QString( "Unknown WKB: %1" ).arg( layerGeomType );
+  }
+  return geom;
+}
+
+QgsLayerItem::LayerType QgsOgrProvider::getGeomType( const QString& layerTypeName )
+{
+  QgsLayerItem::LayerType layerType = QgsLayerItem::Vector;
+
+  if ( layerTypeName == "None" )
+    layerType = QgsLayerItem::TableLayer;
+  else if ( layerTypeName.contains( "Point" ) )
+    layerType = QgsLayerItem::Point;
+  else if ( layerTypeName.contains( "Line" ) )
+    layerType = QgsLayerItem::Line;
+  else if ( layerTypeName.contains( "Polygon" ) )
+    layerType = QgsLayerItem::Polygon;
+
+  return layerType;
+}
+
 QStringList QgsOgrProvider::subLayers() const
 {
   if ( !valid )
@@ -470,25 +507,7 @@ QStringList QgsOgrProvider::subLayers() const
 
     int theLayerFeatureCount = OGR_L_GetFeatureCount( layer, 0 );
 
-    QString geom;
-    switch ( layerGeomType )
-    {
-      case wkbUnknown:            geom = "Unknown"; break;
-      case wkbPoint:              geom = "Point"; break;
-      case wkbLineString:         geom = "LineString"; break;
-      case wkbPolygon:            geom = "Polygon"; break;
-      case wkbMultiPoint:         geom = "MultiPoint"; break;
-      case wkbMultiLineString:    geom = "MultiLineString"; break;
-      case wkbGeometryCollection: geom = "GeometryCollection"; break;
-      case wkbNone:               geom = "None"; break;
-      case wkbPoint25D:           geom = "Point25D"; break;
-      case wkbLineString25D:      geom = "LineString25D"; break;
-      case wkbPolygon25D:         geom = "Polygon25D"; break;
-      case wkbMultiPoint25D:      geom = "MultiPoint25D"; break;
-      case wkbMultiLineString25D: geom = "MultiLineString25D"; break;
-      case wkbMultiPolygon25D:    geom = "MultiPolygon25D"; break;
-      default:                    geom = QString( "Unknown WKB: %1" ).arg( layerGeomType );
-    }
+    QString geom = getGeomName( layerGeomType );
 
     mSubLayerList << QString( "%1:%2:%3:%4" ).arg( i ).arg( theLayerName ).arg( theLayerFeatureCount == -1 ? tr( "Unknown" ) : QString::number( theLayerFeatureCount ) ).arg( geom );
   }
@@ -2399,11 +2418,12 @@ QgsOgrDataSource::QgsOgrDataSource( QString baseUri )
   mValid = false;
 
   QgsDebugMsg( QString( "baseUri= %1 providerKey= %2" ).arg( baseUri ).arg( mProviderKey ) );
-  QgsOgrProvider *dataProvider = new QgsOgrProvider( baseUri );
+  // try to create a read-only provider
+  QgsOgrProvider *dataProvider = new QgsOgrProvider( baseUri, true );
   if ( dataProvider )
   {
     QStringList subLayers = dataProvider->subLayers();
-    QString composedURI;
+    QString name, composedURI, path;
     QStringList info;
     QgsDebugMsg( QString( "got dataProvider, valid: %1 sublayers: %2" ).arg( dataProvider->isValid() ).arg( subLayers.count() ) );
 
@@ -2414,11 +2434,22 @@ QgsOgrDataSource::QgsOgrDataSource( QString baseUri )
         subLayers = QStringList( subLayers.at( dataProvider->layerIndex() ) );
       else
       {
-        // TODO find index in subLayers that corresponds to layerName - for now just layerId works in browser
-        QgsDebugMsg( QString( "FIXME find index that corresponds to layerName=%1" ).arg( dataProvider->layerName() ) );
+        // TODO find better way to get/store index in subLayers that corresponds to layerName
+        for ( int i = 0; i < subLayers.count(); i++ )
+        {
+          if ( subLayers[i].split( ":" ).at( 1 ) == dataProvider->layerName() )
+          {
+            subLayers = QStringList( subLayers.at( i ) );
+            break;
+          }
+        }
       }
       QgsDebugMsg( QString( "requested a sublayer, now sublayers= {%1}" ).arg( subLayers.join( " " ) ) );
     }
+
+    name = QFileInfo( baseUri ).fileName();
+    composedURI = baseUri;
+    path = baseUri;
 
     for ( int i = 0; i < subLayers.count(); i++ )
     {
@@ -2426,12 +2457,18 @@ QgsOgrDataSource::QgsOgrDataSource( QString baseUri )
       if ( info.count() != 4 )
         continue;
       mLayerNames << info[ 1 ];
-      if ( dataProvider->storageType() == "GRASS" )
-        composedURI = QString( "%1|layerindex=%2" ).arg( baseUri, info[ 1 ] );
-      else
-        composedURI = QString( "%1|layername=%2" ).arg( baseUri, info[ 1 ] );
-      mLayers[ info[ 1 ] ] = QgsDataSourceLayer( info[ 1 ], info[ 1 ], composedURI,
-                             QgsMapLayer::VectorLayer, mProviderKey, subLayers[i] );
+      if ( subLayers.count() > 1 )
+      {
+        name = info[ 1 ];
+        if ( dataProvider->storageType() == "GRASS" )
+          composedURI = QString( "%1|layerindex=%2" ).arg( baseUri, info[ 1 ] );
+        else
+          composedURI = QString( "%1|layername=%2" ).arg( baseUri, info[ 1 ] );
+        path = baseUri + "/" + info[ 1 ];
+      }
+      mLayers[ info[ 1 ] ] =
+        new QgsDataSourceLayer( name, info[ 1 ], composedURI, path,
+                                QgsMapLayer::VectorLayer, mProviderKey, subLayers[i] );
     }
     mValid = ! mLayerNames.isEmpty();
     delete dataProvider;

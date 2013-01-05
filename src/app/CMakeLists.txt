@@ -153,6 +153,9 @@ SET(QGIS_APP_SRCS
 
   gps/qgsgpsinformationwidget.cpp
   gps/qgsgpsmarker.cpp
+
+  settingseditor/settingstree.cpp  
+  settingseditor/variantdelegate.cpp
 )
 
 IF (ANDROID)
@@ -290,6 +293,9 @@ SET (QGIS_APP_MOC_HDRS
   ogr/qgsvectorlayersaveasdialog.h
 
   gps/qgsgpsinformationwidget.h
+
+  settingseditor/settingstree.h 
+  settingseditor/variantdelegate.h
   )
 
 IF(WITH_INTERNAL_QWTPOLAR)
@@ -411,7 +417,7 @@ IF(PEDANTIC)
 ENDIF(PEDANTIC)
 
 INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_SOURCE_DIR} composer legend attributetable
+  ${CMAKE_CURRENT_SOURCE_DIR} composer legend attributetable settingseditor
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}/../ui
   ${QWT_INCLUDE_DIR}

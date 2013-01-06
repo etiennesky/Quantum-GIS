@@ -1317,7 +1317,7 @@ void QgisApp::createMenus()
 
   // Settings Editor
   // this in options dialog
-  mSettingsMenu->addSeparator( );
+  // mSettingsMenu->addSeparator( );
   mSettingsMenu->addAction( mActionSettingsEditor );
 }
 

@@ -69,7 +69,7 @@
  {
      if (index.column() == 2) {
          QVariant value = index.model()->data(index, Qt::UserRole);
-         if (!isSupportedType(value.type())) {
+         if (!isSupportedType(VariantDelegate::type(value))) {
              QStyleOptionViewItem myOption = option;
              myOption.state &= ~QStyle::State_Enabled;
              QItemDelegate::paint(painter, myOption, index);
@@ -88,7 +88,7 @@
          return 0;
 
      QVariant originalValue = index.model()->data(index, Qt::UserRole);
-     if (!isSupportedType(originalValue.type()))
+     if (!isSupportedType(VariantDelegate::type(originalValue)))
          return 0;
 
      QLineEdit *lineEdit = new QLineEdit(parent);
@@ -96,7 +96,7 @@
 
      QRegExp regExp;
 
-     switch (originalValue.type()) {
+     switch (VariantDelegate::type(originalValue)) {
      case QVariant::Bool:
          regExp = boolExp;
          break;
@@ -176,7 +176,7 @@
      QVariant originalValue = index.model()->data(index, Qt::UserRole);
      QVariant value;
 
-     switch (originalValue.type()) {
+     switch (VariantDelegate::type(originalValue)) {
      case QVariant::Char:
          value = text.at(0);
          break;
@@ -229,7 +229,7 @@
          break;
      default:
          value = text;
-         value.convert(originalValue.type());
+         value.convert(VariantDelegate::type(originalValue));
      }
 
      model->setData(index, displayText(value), Qt::DisplayRole);
@@ -264,7 +264,7 @@
 
  QString VariantDelegate::displayText(const QVariant &value)
  {
-     switch (value.type()) {
+     switch (VariantDelegate::type(value)) {
      case QVariant::Bool:
      case QVariant::ByteArray:
      case QVariant::Char:
@@ -312,5 +312,37 @@
      default:
          break;
      }
-     return QString("<%1>").arg(value.typeName());
+     return QString("<%1>").arg( value.toString() );
+
  }
+
+/* hack to get "real" type of a variant, because QVariant::type() almost always returns QString */
+QVariant::Type VariantDelegate::type(const QVariant &value)
+{
+  if ( value.type() == QVariant::String )
+  {
+    QString str = value.toString();
+    QRegExp regExp;
+    bool ok;
+
+    // is this a bool (true,false)
+    regExp.setPattern("true|false");
+    regExp.setCaseSensitivity(Qt::CaseInsensitive);
+    if ( regExp.indexIn( str ) != -1 )
+      return QVariant::Bool;
+
+    // is this an int?
+    // perhaps we should treat as double for more flexibility
+    str.toInt( &ok);
+    if ( ok )
+      return QVariant::Int;
+
+    // is this a double?
+    str.toDouble( &ok );
+    if ( ok )
+      return QVariant::Double;
+
+  }
+  // fallback to QVariant::type()
+  return value.type();
+}

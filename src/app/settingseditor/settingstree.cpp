@@ -85,7 +85,7 @@
 
  QSize SettingsTree::sizeHint() const
  {
-     return QSize(800, 600);
+     return QSize(600, 600);
  }
 
  void SettingsTree::setAutoRefresh(bool autoRefresh)
@@ -200,7 +200,7 @@
          if (value.type() == QVariant::Invalid) {
              child->setText(1, "Invalid");
          } else {
-             child->setText(1, value.typeName());
+             child->setText(1, QVariant::typeToName( VariantDelegate::type(value) ));
          }
          child->setText(2, VariantDelegate::displayText(value));
          child->setData(2, Qt::UserRole, value);

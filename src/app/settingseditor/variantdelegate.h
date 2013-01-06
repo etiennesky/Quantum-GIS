@@ -62,6 +62,8 @@
      static bool isSupportedType(QVariant::Type type);
      static QString displayText(const QVariant &value);
 
+     static QVariant::Type type(const QVariant &value);
+
  private:
      mutable QRegExp boolExp;
      mutable QRegExp byteArrayExp;

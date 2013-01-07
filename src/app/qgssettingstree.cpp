@@ -40,13 +40,13 @@
 
 #include <QtGui>
 
-#include "settingstree.h"
-#include "variantdelegate.h"
+#include "qgssettingstree.h"
+#include "qgsvariantdelegate.h"
 
-SettingsTree::SettingsTree( QWidget *parent )
+QgsSettingsTree::QgsSettingsTree( QWidget *parent )
     : QTreeWidget( parent )
 {
-  setItemDelegate( new VariantDelegate( this ) );
+  setItemDelegate( new QgsVariantDelegate( this ) );
 
   QStringList labels;
   labels << tr( "Setting" ) << tr( "Type" ) << tr( "Value" );
@@ -67,7 +67,7 @@ SettingsTree::SettingsTree( QWidget *parent )
   connect( &refreshTimer, SIGNAL( timeout() ), this, SLOT( maybeRefresh() ) );
 }
 
-void SettingsTree::setSettingsObject( QSettings *settings )
+void QgsSettingsTree::setSettingsObject( QSettings *settings )
 {
   delete this->settings;
   this->settings = settings;
@@ -86,12 +86,12 @@ void SettingsTree::setSettingsObject( QSettings *settings )
   }
 }
 
-QSize SettingsTree::sizeHint() const
+QSize QgsSettingsTree::sizeHint() const
 {
   return QSize( 600, 600 );
 }
 
-void SettingsTree::setAutoRefresh( bool autoRefresh )
+void QgsSettingsTree::setAutoRefresh( bool autoRefresh )
 {
   this->autoRefresh = autoRefresh;
   if ( settings )
@@ -108,7 +108,7 @@ void SettingsTree::setAutoRefresh( bool autoRefresh )
   }
 }
 
-void SettingsTree::setFallbacksEnabled( bool enabled )
+void QgsSettingsTree::setFallbacksEnabled( bool enabled )
 {
   if ( settings )
   {
@@ -117,13 +117,13 @@ void SettingsTree::setFallbacksEnabled( bool enabled )
   }
 }
 
-void SettingsTree::maybeRefresh()
+void QgsSettingsTree::maybeRefresh()
 {
   if ( state() != EditingState )
     refresh();
 }
 
-void SettingsTree::refresh()
+void QgsSettingsTree::refresh()
 {
   if ( !settings )
     return;
@@ -138,7 +138,7 @@ void SettingsTree::refresh()
            this, SLOT( updateSetting( QTreeWidgetItem* ) ) );
 }
 
-bool SettingsTree::event( QEvent *event )
+bool QgsSettingsTree::event( QEvent *event )
 {
   if ( event->type() == QEvent::WindowActivate )
   {
@@ -148,7 +148,7 @@ bool SettingsTree::event( QEvent *event )
   return QTreeWidget::event( event );
 }
 
-void SettingsTree::updateSetting( QTreeWidgetItem *item )
+void QgsSettingsTree::updateSetting( QTreeWidgetItem *item )
 {
   QString key = item->text( 0 );
   QTreeWidgetItem *ancestor = item->parent();
@@ -163,7 +163,7 @@ void SettingsTree::updateSetting( QTreeWidgetItem *item )
     refresh();
 }
 
-void SettingsTree::updateChildItems( QTreeWidgetItem *parent )
+void QgsSettingsTree::updateChildItems( QTreeWidgetItem *parent )
 {
   int dividerIndex = 0;
 
@@ -224,9 +224,9 @@ void SettingsTree::updateChildItems( QTreeWidgetItem *parent )
     }
     else
     {
-      child->setText( 1, QVariant::typeToName( VariantDelegate::type( value ) ) );
+      child->setText( 1, QVariant::typeToName( QgsVariantDelegate::type( value ) ) );
     }
-    child->setText( 2, VariantDelegate::displayText( value ) );
+    child->setText( 2, QgsVariantDelegate::displayText( value ) );
     child->setData( 2, Qt::UserRole, value );
   }
 
@@ -234,7 +234,7 @@ void SettingsTree::updateChildItems( QTreeWidgetItem *parent )
     delete childAt( parent, dividerIndex );
 }
 
-QTreeWidgetItem *SettingsTree::createItem( const QString &text,
+QTreeWidgetItem *QgsSettingsTree::createItem( const QString &text,
     QTreeWidgetItem *parent, int index )
 {
   QTreeWidgetItem *after = 0;
@@ -252,7 +252,7 @@ QTreeWidgetItem *SettingsTree::createItem( const QString &text,
   return item;
 }
 
-QTreeWidgetItem *SettingsTree::childAt( QTreeWidgetItem *parent, int index )
+QTreeWidgetItem *QgsSettingsTree::childAt( QTreeWidgetItem *parent, int index )
 {
   if ( parent )
     return parent->child( index );
@@ -260,7 +260,7 @@ QTreeWidgetItem *SettingsTree::childAt( QTreeWidgetItem *parent, int index )
     return topLevelItem( index );
 }
 
-int SettingsTree::childCount( QTreeWidgetItem *parent )
+int QgsSettingsTree::childCount( QTreeWidgetItem *parent )
 {
   if ( parent )
     return parent->childCount();
@@ -268,7 +268,7 @@ int SettingsTree::childCount( QTreeWidgetItem *parent )
     return topLevelItemCount();
 }
 
-int SettingsTree::findChild( QTreeWidgetItem *parent, const QString &text,
+int QgsSettingsTree::findChild( QTreeWidgetItem *parent, const QString &text,
                              int startIndex )
 {
   for ( int i = startIndex; i < childCount( parent ); ++i )
@@ -279,7 +279,7 @@ int SettingsTree::findChild( QTreeWidgetItem *parent, const QString &text,
   return -1;
 }
 
-void SettingsTree::moveItemForward( QTreeWidgetItem *parent, int oldIndex,
+void QgsSettingsTree::moveItemForward( QTreeWidgetItem *parent, int oldIndex,
                                     int newIndex )
 {
   for ( int i = 0; i < oldIndex - newIndex; ++i )

@@ -251,7 +251,7 @@
 
 #include "nodetool/qgsmaptoolnodetool.h"
 
-#include "settingseditor/settingstree.h"
+#include "qgssettingstree.h"
 #include "qgsdialog.h"
 
 //
@@ -6066,7 +6066,7 @@ void QgisApp::settingsEditor()
                       "Any changes here are applied immediately.\n" ) );
   layout->addWidget( label );
 
-  SettingsTree *settingsTree = new SettingsTree( &settingsDialog );
+  QgsSettingsTree *settingsTree = new QgsSettingsTree( &settingsDialog );
   QSettings settings;
   settingsTree->setSettingsObject( &settings );
   settingsTree->show();

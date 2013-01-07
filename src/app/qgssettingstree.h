@@ -38,8 +38,8 @@
 **
 ****************************************************************************/
 
-#ifndef SETTINGSTREE_H
-#define SETTINGSTREE_H
+#ifndef QGSSETTINGSTREE_H
+#define QGSSETTINGSTREE_H
 
 #include <QIcon>
 #include <QTimer>
@@ -47,12 +47,12 @@
 
 class QSettings;
 
-class SettingsTree : public QTreeWidget
+class QgsSettingsTree : public QTreeWidget
 {
     Q_OBJECT
 
   public:
-    SettingsTree( QWidget *parent = 0 );
+    QgsSettingsTree( QWidget *parent = 0 );
 
     void setSettingsObject( QSettings *settings );
     QSize sizeHint() const;

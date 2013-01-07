@@ -38,18 +38,18 @@
  **
  ****************************************************************************/
 
-#ifndef VARIANTDELEGATE_H
-#define VARIANTDELEGATE_H
+#ifndef QGSVARIANTDELEGATE_H
+#define QGSVARIANTDELEGATE_H
 
 #include <QItemDelegate>
 #include <QRegExp>
 
-class VariantDelegate : public QItemDelegate
+class QgsVariantDelegate : public QItemDelegate
 {
     Q_OBJECT
 
   public:
-    VariantDelegate( QObject *parent = 0 );
+    QgsVariantDelegate( QObject *parent = 0 );
 
     void paint( QPainter *painter, const QStyleOptionViewItem &option,
                 const QModelIndex &index ) const;

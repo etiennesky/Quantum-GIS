@@ -40,9 +40,9 @@
 
 #include <QtGui>
 
-#include "variantdelegate.h"
+#include "qgsvariantdelegate.h"
 
-VariantDelegate::VariantDelegate( QObject *parent )
+QgsVariantDelegate::QgsVariantDelegate( QObject *parent )
     : QItemDelegate( parent )
 {
   boolExp.setPattern( "true|false" );
@@ -63,14 +63,14 @@ VariantDelegate::VariantDelegate( QObject *parent )
   dateTimeExp.setPattern( dateExp.pattern() + "T" + timeExp.pattern() );
 }
 
-void VariantDelegate::paint( QPainter *painter,
+void QgsVariantDelegate::paint( QPainter *painter,
                              const QStyleOptionViewItem &option,
                              const QModelIndex &index ) const
 {
   if ( index.column() == 2 )
   {
     QVariant value = index.model()->data( index, Qt::UserRole );
-    if ( !isSupportedType( VariantDelegate::type( value ) ) )
+    if ( !isSupportedType( QgsVariantDelegate::type( value ) ) )
     {
       QStyleOptionViewItem myOption = option;
       myOption.state &= ~QStyle::State_Enabled;
@@ -82,7 +82,7 @@ void VariantDelegate::paint( QPainter *painter,
   QItemDelegate::paint( painter, option, index );
 }
 
-QWidget *VariantDelegate::createEditor( QWidget *parent,
+QWidget *QgsVariantDelegate::createEditor( QWidget *parent,
                                         const QStyleOptionViewItem & /* option */,
                                         const QModelIndex &index ) const
 {
@@ -90,7 +90,7 @@ QWidget *VariantDelegate::createEditor( QWidget *parent,
     return 0;
 
   QVariant originalValue = index.model()->data( index, Qt::UserRole );
-  if ( !isSupportedType( VariantDelegate::type( originalValue ) ) )
+  if ( !isSupportedType( QgsVariantDelegate::type( originalValue ) ) )
     return 0;
 
   QLineEdit *lineEdit = new QLineEdit( parent );
@@ -98,7 +98,7 @@ QWidget *VariantDelegate::createEditor( QWidget *parent,
 
   QRegExp regExp;
 
-  switch ( VariantDelegate::type( originalValue ) )
+  switch ( QgsVariantDelegate::type( originalValue ) )
   {
     case QVariant::Bool:
       regExp = boolExp;
@@ -154,7 +154,7 @@ QWidget *VariantDelegate::createEditor( QWidget *parent,
   return lineEdit;
 }
 
-void VariantDelegate::setEditorData( QWidget *editor,
+void QgsVariantDelegate::setEditorData( QWidget *editor,
                                      const QModelIndex &index ) const
 {
   QVariant value = index.model()->data( index, Qt::UserRole );
@@ -162,7 +162,7 @@ void VariantDelegate::setEditorData( QWidget *editor,
     lineEdit->setText( displayText( value ) );
 }
 
-void VariantDelegate::setModelData( QWidget *editor, QAbstractItemModel *model,
+void QgsVariantDelegate::setModelData( QWidget *editor, QAbstractItemModel *model,
                                     const QModelIndex &index ) const
 {
   QLineEdit *lineEdit = qobject_cast<QLineEdit *>( editor );
@@ -181,7 +181,7 @@ void VariantDelegate::setModelData( QWidget *editor, QAbstractItemModel *model,
   QVariant originalValue = index.model()->data( index, Qt::UserRole );
   QVariant value;
 
-  switch ( VariantDelegate::type( originalValue ) )
+  switch ( QgsVariantDelegate::type( originalValue ) )
   {
     case QVariant::Char:
       value = text.at( 0 );
@@ -235,14 +235,14 @@ void VariantDelegate::setModelData( QWidget *editor, QAbstractItemModel *model,
     break;
     default:
       value = text;
-      value.convert( VariantDelegate::type( originalValue ) );
+      value.convert( QgsVariantDelegate::type( originalValue ) );
   }
 
   model->setData( index, displayText( value ), Qt::DisplayRole );
   model->setData( index, value, Qt::UserRole );
 }
 
-bool VariantDelegate::isSupportedType( QVariant::Type type )
+bool QgsVariantDelegate::isSupportedType( QVariant::Type type )
 {
   switch ( type )
   {
@@ -269,9 +269,9 @@ bool VariantDelegate::isSupportedType( QVariant::Type type )
   }
 }
 
-QString VariantDelegate::displayText( const QVariant &value )
+QString QgsVariantDelegate::displayText( const QVariant &value )
 {
-  switch ( VariantDelegate::type( value ) )
+  switch ( QgsVariantDelegate::type( value ) )
   {
     case QVariant::Bool:
     case QVariant::ByteArray:
@@ -325,7 +325,7 @@ QString VariantDelegate::displayText( const QVariant &value )
 }
 
 /* hack to get "real" type of a variant, because QVariant::type() almost always returns QString */
-QVariant::Type VariantDelegate::type( const QVariant &value )
+QVariant::Type QgsVariantDelegate::type( const QVariant &value )
 {
   if ( value.type() == QVariant::String )
   {

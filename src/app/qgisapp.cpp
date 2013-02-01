@@ -189,7 +189,7 @@
 #include "qgsmessagelogviewer.h"
 #include "qgsdataitem.h"
 
-#include "ogr/qgsogrsublayersdialog.h"
+#include "qgssublayersdialog.h"
 #include "ogr/qgsopenvectorlayerdialog.h"
 #include "ogr/qgsvectorlayersaveasdialog.h"
 //
@@ -2609,7 +2609,7 @@ bool QgisApp::askUserForZipItemLayers( QString path )
   else
   {
     // We initialize a selection dialog and display it.
-    QgsOGRSublayersDialog chooseSublayersDialog( this );
+    QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Zip, "ZIP" );
     chooseSublayersDialog.setWindowTitle( tr( "Select zip layers to add..." ) );
 
     QStringList layers;
@@ -2620,11 +2620,11 @@ bool QgisApp::askUserForZipItemLayers( QString path )
       QgsDebugMsgLevel( QString( "item path=%1 provider=" ).arg( item->path() ).arg( layerItem->providerKey() ), 2 );
       if ( layerItem && layerItem->providerKey() == "gdal" )
       {
-        layers << QString( "%1|%2| |%3" ).arg( i ).arg( item->name() ).arg( "Raster" );
+        layers << QString( "%1|%2|%3" ).arg( i ).arg( item->name() ).arg( "Raster" );
       }
       else if ( layerItem && layerItem->providerKey() == "ogr" )
       {
-        layers << QString( "%1|%2| |%3" ).arg( i ).arg( item->name() ).arg( tr( "Vector" ) );
+        layers << QString( "%1|%2|%3" ).arg( i ).arg( item->name() ).arg( tr( "Vector" ) );
       }
     }
 
@@ -2687,7 +2687,7 @@ void QgisApp::askUserForGDALSublayers( QgsRasterLayer *layer )
   }
 
   // We initialize a selection dialog and display it.
-  QgsOGRSublayersDialog chooseSublayersDialog( this );
+  QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Gdal, "GDAL" );
   chooseSublayersDialog.setWindowTitle( tr( "Select raster layers to add..." ) );
 
   QStringList layers;
@@ -2716,7 +2716,7 @@ void QgisApp::askUserForGDALSublayers( QgsRasterLayer *layer )
     if ( name.endsWith( "\"" ) ) name.chop( 1 );
 
     names << name;
-    layers << QString( "%1|%2|1|%3" ).arg( i ).arg( name ).arg( tr( "Raster" ) );
+    layers << QString( "%1|%2" ).arg( i ).arg( name );
   }
 
   chooseSublayersDialog.populateLayerTable( layers, "|" );
@@ -2792,7 +2792,7 @@ void QgisApp::askUserForOGRSublayers( QgsVectorLayer *layer )
   QString layertype = layer->dataProvider()->storageType();
 
   // We initialize a selection dialog and display it.
-  QgsOGRSublayersDialog chooseSublayersDialog( this );
+  QgsSublayersDialog chooseSublayersDialog( this, QgsSublayersDialog::Ogr, "OGR" );
   chooseSublayersDialog.setWindowTitle( tr( "Select vector layers to add..." ) );
   chooseSublayersDialog.populateLayerTable( sublayers );
 

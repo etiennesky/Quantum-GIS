@@ -313,8 +313,6 @@ class CORE_EXPORT QgsZipItem : public QgsDataCollectionItem
     static QVector<dataItem_t *> mDataItemPtr;
     static QStringList mProviderNames;
 
-    static QString vsiPrefix( QString uri );
-
     static QgsDataItem* itemFromPath( QgsDataItem* parent, QString path, QString name );
 
     static const QIcon &iconZip();

@@ -1458,7 +1458,7 @@
                        </sizepolicy>
                       </property>
                       <property name="text">
-                       <string>Prompt for raster sublayers when opening</string>
+                       <string>Prompt for sublayers when opening</string>
                       </property>
                      </widget>
                     </item>
@@ -1476,7 +1476,7 @@
                      </spacer>
                     </item>
                     <item>
-                     <widget class="QComboBox" name="cmbPromptRasterSublayers">
+                     <widget class="QComboBox" name="cmbPromptSublayers">
                       <item>
                        <property name="text">
                         <string/>

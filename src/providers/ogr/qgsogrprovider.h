@@ -15,6 +15,9 @@ email                : sherman at mrcc.com
  *                                                                         *
  ***************************************************************************/
 
+#ifndef QGSOGRPROVIDER_H
+#define QGSOGRPROVIDER_H
+
 #include "qgsrectangle.h"
 #include "qgsvectordataprovider.h"
 #include "qgsvectorfilewriter.h"
@@ -247,6 +250,9 @@ class QgsOgrProvider : public QgsVectorDataProvider
     /** return OGR geometry type */
     static int getOgrGeomType( OGRLayerH ogrLayer );
 
+    int layerIndex() const { return mLayerIndex; }
+    QString layerName() const { return mLayerName; }
+
   protected:
     /** loads fields from input file to member attributeFields */
     void loadFields();
@@ -259,6 +265,7 @@ class QgsOgrProvider : public QgsVectorDataProvider
 
     /** convert a QgsField to work with OGR */
     static bool convertField( QgsField &field, const QTextCodec &encoding );
+
 
   private:
     unsigned char *getGeometryPointer( OGRFeatureH fet );
@@ -321,3 +328,16 @@ class QgsOgrProvider : public QgsVectorDataProvider
     friend class QgsOgrFeatureIterator;
     QgsOgrFeatureIterator* mActiveIterator; //!< pointer to currently active iterator (0 if none)
 };
+
+
+#include "qgsdatasource.h"
+
+class QgsOgrDataSource : public QgsDataSource
+{
+  public:
+
+    QgsOgrDataSource( QString baseUri );
+    virtual ~QgsOgrDataSource();
+};
+
+#endif

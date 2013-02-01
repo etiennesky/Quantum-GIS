@@ -126,7 +126,7 @@ QgsGdalProvider::QgsGdalProvider( QString const & uri, bool update )
   mGdalDataset = 0;
 
   // Try to open using VSIFileHandler (see qgsogrprovider.cpp)
-  QString vsiPrefix = QgsZipItem::vsiPrefix( uri );
+  QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( uri );
   if ( vsiPrefix != "" )
   {
     if ( !uri.startsWith( vsiPrefix ) )
@@ -1097,6 +1097,57 @@ QStringList QgsGdalProvider::subLayers( GDALDatasetH dataset )
   return subLayers;
 }
 
+QStringList QgsGdalProvider::subLayerNames( GDALDatasetH theDataset, const QStringList& theSubLayers )
+{
+  if ( theDataset == NULL || theSubLayers.isEmpty() )
+    return QStringList();
+
+  QStringList mySubLayerNames;
+  // const char * myDescription = GDALGetDescription( dataset );
+  char ** myFileList =  GDALGetFileList( theDataset );
+
+  if ( CSLCount( myFileList ) > 0 )
+  {
+    // simplify raster sublayer name - should add a function in gdal provider for this?
+    // code is copied from QgsGdalLayerItem::createChildren
+    QString path = myFileList[0];
+
+    // QgsDebugMsg("path= "+path);
+    foreach ( QString name, theSubLayers )
+    {
+      // QgsDebugMsg("name= "+name);
+
+      // typical sublayer string is NETCDF:"/data/tmp/file.nc":variable
+      // use all text after filename
+      // assume this syntax is the same for all drivers - need to test more
+      name = name.mid( name.indexOf( path ) + path.length() + 1 );
+      // remove any : or " left over
+      if ( name.startsWith( ":" ) ) name.remove( 0, 1 );
+      if ( name.startsWith( "\"" ) ) name.remove( 0, 1 );
+      if ( name.endsWith( ":" ) ) name.chop( 1 );
+      if ( name.endsWith( "\"" ) ) name.chop( 1 );
+
+      // if netcdf/hdf use all text after filename
+      // for hdf4 it would be best to get description, because the subdataset_index is not very practical
+      // if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
+      //      name.startsWith( "hdf", Qt::CaseInsensitive ) )
+      // name = name.mid( name.indexOf( path ) + path.length() + 1 );
+      // else
+      // {
+      //   // remove driver name and file name
+      //   name.replace( name.split( ":" )[0], "" );
+      //   name.replace( path, "" );
+      // }
+
+      // QgsDebugMsg("name= "+name);
+
+      mySubLayerNames << name;
+    }
+  }
+
+  return mySubLayerNames;
+}
+
 bool QgsGdalProvider::hasHistogram( int theBandNo,
                                     int theBinCount,
                                     double theMinimum, double theMaximum,
@@ -1708,11 +1759,6 @@ QList<QgsRasterPyramid> QgsGdalProvider::buildPyramidList( QList<int> overviewLi
   return mPyramidList;
 }
 
-QStringList QgsGdalProvider::subLayers() const
-{
-  return mSubLayers;
-}
-
 void QgsGdalProvider::emitProgress( int theType, double theProgress, QString theMessage )
 {
   emit progress( theType, theProgress, theMessage );
@@ -1952,7 +1998,8 @@ void buildSupportedRasterFileFilterAndExtensions( QString & theFileFiltersString
     QString glob = "*.zip";
     glob += " *.gz";
     glob += " *.tar *.tar.gz *.tgz";
-    theFileFiltersString += ";;[GDAL] " + QObject::tr( "GDAL/OGR VSIFileHandler" ) + " (" + glob.toLower() + " " + glob.toUpper() + ")";
+    // theFileFiltersString += ";;[GDAL] " + QObject::tr( "GDAL/OGR VSIFileHandler" ) + " (" + glob.toLower() + " " + glob.toUpper() + ")";
+    theFileFiltersString += ";;[GDAL] " + QObject::tr( "VSIFile" ) + " (" + glob.toLower() + " " + glob.toUpper() + ")";
     theExtensions << "zip" << "gz" << "tar" << "tar.gz" << "tgz";
   }
 #endif
@@ -1972,7 +2019,7 @@ QGISEXTERN bool isValidRasterFileName( QString const & theFileNameQString, QStri
 
   // Try to open using VSIFileHandler (see qgsogrprovider.cpp)
   // TODO suppress error messages and report in debug, like in OGR provider
-  QString vsiPrefix = QgsZipItem::vsiPrefix( fileName );
+  QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( fileName );
   if ( vsiPrefix != "" )
   {
     if ( !fileName.startsWith( vsiPrefix ) )
@@ -2261,6 +2308,7 @@ void QgsGdalProvider::initBaseDataset()
 
   // get sublayers
   mSubLayers = QgsGdalProvider::subLayers( mGdalDataset );
+  mSubLayerNames = QgsGdalProvider::subLayerNames( mGdalDataset, mSubLayers );
 
   // check if this file has bands or subdatasets
   CPLErrorReset();
@@ -2670,4 +2718,63 @@ QString QgsGdalProvider::validatePyramidsCreationOptions( RasterPyramidsFormat p
   }
 
   return QString();
+}
+
+
+// ---------------------------------------------------------------------------
+// QgsGdalDataSource class
+// ---------------------------------------------------------------------------
+
+QgsGdalDataSource::QgsGdalDataSource( QString baseUri )
+    : QgsDataSource( baseUri, PROVIDER_KEY )
+{
+  mDataSourceType = RasterDataSource;
+  mValid = false;
+
+  QgsDebugMsg( QString( "baseUri= %1 providerKey= %2" ).arg( baseUri ).arg( PROVIDER_KEY ) );
+  QgsGdalProvider *provider = new QgsGdalProvider( baseUri );
+  if ( provider )
+  {
+    QgsDebugMsg( QString( "got provider, valid: %1" ).arg( provider->isValid() ) );
+    QStringList layerUris;
+
+    // get sublayers directly from provider
+    layerUris = provider->subLayers();
+    // TODO check promptForRasterSublayers setting
+    if ( ! layerUris.isEmpty() )
+      mLayerNames = provider->subLayerNames();
+
+    // if provider is valid, add "main" layer
+    if ( provider->isValid() )
+    {
+      layerUris.prepend( baseUri );
+      mLayerNames.prepend( QFileInfo( baseUri ).completeBaseName() );
+    }
+
+    QgsDebugMsg( QString( "uris:%1 names:%2" ).arg( layerUris.count() ).arg( mLayerNames.count() ) );
+
+    // fill mLayers
+    for ( int i = 0; i < mLayerNames.count(); i++ )
+    {
+      mLayers[ mLayerNames[i] ] = QgsDataSourceLayer( mLayerNames[i], mLayerNames[i], layerUris[i],
+                                  QgsMapLayer::RasterLayer, mProviderKey, QString( "%1:%2" ).arg( i ).arg( mLayerNames[i] ) );
+    }
+
+    mValid = ! mLayerNames.isEmpty();
+    delete provider;
+  }
+}
+
+QgsGdalDataSource::~QgsGdalDataSource()
+{}
+
+QGISEXTERN QgsGdalDataSource * dataSource( const QString& uri )
+{
+  QgsGdalDataSource* dataSource = new QgsGdalDataSource( uri );
+  if ( ! dataSource->isValid() )
+  {
+    delete dataSource;
+    dataSource = 0;
+  }
+  return dataSource;
 }

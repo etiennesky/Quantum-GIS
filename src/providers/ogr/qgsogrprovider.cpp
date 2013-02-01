@@ -221,6 +221,8 @@ QgsOgrProvider::QgsOgrProvider( QString const & uri )
   // This part of the code parses the uri transmitted to the ogr provider to
   // get the options the client wants us to apply
 
+  mLayerIndex = -1;
+
   // If there is no & in the uri, then the uri is just the filename. The loaded
   // layer will be layer 0.
   //this is not true for geojson
@@ -267,7 +269,7 @@ QgsOgrProvider::QgsOgrProvider( QString const & uri )
 
   // Try to open using VSIFileHandler
   //   see http://trac.osgeo.org/gdal/wiki/UserDocs/ReadInZip
-  QString vsiPrefix = QgsZipItem::vsiPrefix( uri );
+  QString vsiPrefix = QgsVsifileDataSource::vsiPrefix( uri );
   if ( vsiPrefix != "" )
   {
     // GDAL>=1.8.0 has write support for zip, but read and write operations
@@ -1542,7 +1544,8 @@ QString createFilters( QString type )
     QSettings settings;
     if ( settings.value( "/qgis/scanZipInBrowser2", "basic" ).toString() != "no" )
     {
-      myFileFilters += createFileFilter_( QObject::tr( "GDAL/OGR VSIFileHandler" ), "*.zip *.gz *.tar *.tar.gz *.tgz" );
+      // myFileFilters += createFileFilter_( QObject::tr( "GDAL/OGR VSIFileHandler" ), "*.zip *.gz *.tar *.tar.gz *.tgz" );
+      myFileFilters += createFileFilter_( QObject::tr( "VSIFile" ), "*.zip *.gz *.tar *.tar.gz *.tgz" );
       myExtensions << "zip" << "gz" << "tar" << "tar.gz" << "tgz";
 
     }
@@ -2133,4 +2136,71 @@ QGISEXTERN QgsVectorLayerImport::ImportError createEmptyLayer(
            uri, fields, wkbType, srs, overwrite,
            oldToNewAttrIdxMap, errorMessage, options
          );
+}
+
+
+// ---------------------------------------------------------------------------
+// QgsOgrDataSource class
+// ---------------------------------------------------------------------------
+
+QgsOgrDataSource::QgsOgrDataSource( QString baseUri )
+    : QgsDataSource( baseUri, TEXT_PROVIDER_KEY )
+{
+  mDataSourceType = VectorDataSource;
+  mValid = false;
+
+  QgsDebugMsg( QString( "baseUri= %1 providerKey= %2" ).arg( baseUri ).arg( mProviderKey ) );
+  QgsOgrProvider *dataProvider = new QgsOgrProvider( baseUri );
+  if ( dataProvider )
+  {
+    QStringList subLayers = dataProvider->subLayers();
+    QString composedURI;
+    QStringList info;
+    QgsDebugMsg( QString( "got dataProvider, valid: %1 sublayers: %2" ).arg( dataProvider->isValid() ).arg( subLayers.count() ) );
+
+    // check that we requested a sublayer
+    if ( baseUri.contains( '|', Qt::CaseSensitive ) )
+    {
+      if ( dataProvider->layerIndex() > 0 )
+        subLayers = QStringList( subLayers.at( dataProvider->layerIndex() ) );
+      else
+      {
+        // TODO find index in subLayers that corresponds to layerName - for now just layerId works in browser
+        QgsDebugMsg( QString( "FIXME find index that corresponds to layerName=%1" ).arg( dataProvider->layerName() ) );
+      }
+      QgsDebugMsg( QString( "requested a sublayer, now sublayers= {%1}" ).arg( subLayers.join( " " ) ) );
+    }
+
+    for ( int i = 0; i < subLayers.count(); i++ )
+    {
+      info = subLayers[i].split( ":" );
+      if ( info.count() != 4 )
+        continue;
+      mLayerNames << info[ 1 ];
+      if ( dataProvider->storageType() == "GRASS" )
+        composedURI = QString( "%1|layerindex=%2" ).arg( baseUri, info[ 1 ] );
+      else
+        composedURI = QString( "%1|layername=%2" ).arg( baseUri, info[ 1 ] );
+      mLayers[ info[ 1 ] ] = QgsDataSourceLayer( info[ 1 ], info[ 1 ], composedURI,
+                             QgsMapLayer::VectorLayer, mProviderKey, subLayers[i] );
+    }
+    mValid = ! mLayerNames.isEmpty();
+    delete dataProvider;
+  }
+}
+
+QgsOgrDataSource::~QgsOgrDataSource()
+{}
+
+
+
+QGISEXTERN QgsOgrDataSource * dataSource( const QString& uri )
+{
+  QgsOgrDataSource* dataSource = new QgsOgrDataSource( uri );
+  if ( ! dataSource->isValid() )
+  {
+    delete dataSource;
+    dataSource = 0;
+  }
+  return dataSource;
 }

@@ -459,6 +459,8 @@ void QgsBrowserDockWidget::addLayer( QgsLayerItem *layerItem )
   QString providerKey = layerItem->providerKey();
 
   QgsDebugMsg( providerKey + " : " + uri );
+
+  // TODO use QgsDataSource/QgsSublayersDialog directly
   if ( type == QgsMapLayer::VectorLayer )
   {
     QgisApp::instance()->addVectorLayer( uri, layerItem->layerName(), providerKey );

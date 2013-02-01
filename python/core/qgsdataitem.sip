@@ -241,10 +241,7 @@ class QgsZipItem : QgsDataCollectionItem
     QVector<QgsDataItem*> createChildren();
     const QStringList & getZipFileList();
 
-    // static QVector<dataItem_t *> mDataItemPtr;
     static QStringList mProviderNames;
-
-    static QString vsiPrefix( QString uri );
 
     static QgsDataItem* itemFromPath( QgsDataItem* parent, QString path, QString name ) /Factory/;
 

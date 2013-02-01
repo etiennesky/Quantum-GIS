@@ -191,9 +191,15 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
      */
     QString metadata();
 
-    /** \brief Returns the sublayers of this layer - Useful for providers that manage their own layers, such as WMS */
-    QStringList subLayers() const;
+    /** \brief Returns the sublayer URIs of this layer - Useful for providers that manage their own layers, such as WMS  and also for gdal subdatasets */
+    QStringList subLayers() const { return mSubLayers; }
     static QStringList subLayers( GDALDatasetH dataset );
+
+    /** \brief Returns the sublayer names of this layer (for easy identification)
+     * @note needs further testing - was tested only with netcdf datasets
+     * @note added in version 2.0 */
+    QStringList subLayerNames() const { return mSubLayerNames; }
+    static QStringList subLayerNames( GDALDatasetH dataset, const QStringList& theSubLayers );
 
     bool hasStatistics( int theBandNo,
                         int theStats = QgsRasterBandStats::All,
@@ -317,6 +323,16 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
 
     /** \brief sublayers list saved for subsequent access */
     QStringList mSubLayers;
+    QStringList mSubLayerNames;
+};
+
+#include "qgsdatasource.h"
+
+class QgsGdalDataSource : public QgsDataSource
+{
+  public:
+    QgsGdalDataSource( QString baseUri );
+    virtual ~QgsGdalDataSource();
 
 };
 

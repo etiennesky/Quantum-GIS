@@ -200,13 +200,13 @@ void QgsDataItem::populate()
   QApplication::restoreOverrideCursor();
 }
 
-int QgsDataItem::rowCount()
+int QgsDataItem::rowCount() const
 {
   // if ( !mPopulated )
   //   populate();
   return mChildren.size();
 }
-bool QgsDataItem::hasChildren()
+bool QgsDataItem::hasChildren() const
 {
   return ( mPopulated ? mChildren.count() > 0 : true );
 }
@@ -216,27 +216,16 @@ void QgsDataItem::addChildItem( QgsDataItem * child, bool refresh )
   QgsDebugMsg( QString( "path = %1 add child #%2 - %3 - %4" ).arg( mPath ).arg( mChildren.size() ).arg( child->mName ).arg( child->mType ) );
 
   int i;
-  if ( type() == Directory )
+  for ( i = 0; i < mChildren.size(); i++ )
   {
-    for ( i = 0; i < mChildren.size(); i++ )
-    {
-      // sort items by type, so directories are before data items
-      if ( mChildren[i]->mType == child->mType &&
-           mChildren[i]->mName.localeAwareCompare( child->mName ) >= 0 )
-        break;
-    }
-  }
-  else
-  {
-    for ( i = 0; i < mChildren.size(); i++ )
-    {
-      if ( mChildren[i]->mName.localeAwareCompare( child->mName ) >= 0 )
-        break;
-    }
+    if ( child && mChildren[i] && ( child->lessThan( mChildren[i] ) ) )
+      break;
   }
 
   if ( refresh )
     emit beginInsertItems( this, i, i );
+
+  QgsDebugMsgLevel( QString( "inserting child %1 at index %2" ).arg( child->mName ).arg( i ), 2 );
 
   mChildren.insert( i, child );
 
@@ -330,7 +319,7 @@ void QgsDataItem::refresh()
   QApplication::restoreOverrideCursor();
 }
 
-bool QgsDataItem::equal( const QgsDataItem *other )
+bool QgsDataItem::equal( const QgsDataItem *other ) const
 {
   if ( metaObject()->className() == other->metaObject()->className() &&
        mPath == other->path() )
@@ -338,6 +327,23 @@ bool QgsDataItem::equal( const QgsDataItem *other )
     return true;
   }
   return false;
+}
+
+bool QgsDataItem::lessThan( const QgsDataItem *other ) const
+{
+  if ( ! other ) return true;
+
+  // make sure directories are before other items
+  if ( parent() && parent()->mType == Directory )
+  {
+    if ( mType == Directory && other->mType != Directory )
+      return true;
+    if ( mType != Directory && other->mType == Directory )
+      return false;
+  }
+
+  // compare by name
+  return other->mName.localeAwareCompare( mName ) >= 0;
 }
 
 // ---------------------------------------------------------------------
@@ -368,16 +374,42 @@ QgsMapLayer::LayerType QgsLayerItem::mapLayerType()
   return QgsMapLayer::VectorLayer;
 }
 
-bool QgsLayerItem::equal( const QgsDataItem *other )
+bool QgsLayerItem::equal( const QgsDataItem *other ) const
 {
   //QgsDebugMsg ( mPath + " x " + other->mPath );
+  QgsDebugMsgLevel( mPath + " x " + other->path(), 2 );
   if ( type() != other->type() )
   {
     return false;
   }
-  //const QgsLayerItem *o = qobject_cast<const QgsLayerItem *> ( other );
+
+  // layerItem comparison
   const QgsLayerItem *o = dynamic_cast<const QgsLayerItem *>( other );
-  return ( mPath == o->mPath && mName == o->mName && mUri == o->mUri && mProviderKey == o->mProviderKey );
+
+  // basic test: matching name, uri and provider
+  if ( !( mPath == o->mPath && mName == o->mName && mUri == o->mUri && mProviderKey == o->mProviderKey ) )
+    return false;
+
+  // check matching children, if any (perhaps other classes need this check)
+  if ( this->hasChildren() || other->hasChildren() )
+  {
+    QgsDebugMsgLevel( QString( "rowCount: %1 x %2" ).arg( this->rowCount() ).arg( other->rowCount() ), 2 );
+    if ( this->rowCount() != other->rowCount() )
+      return false;
+    QgsDebugMsgLevel( QString( "realChildCount: %1 x %2" ).arg( this->realChildCount() ).arg( other->realChildCount() ), 2 );
+    if ( this->realChildCount() != other->realChildCount() )
+      return false;
+    // this not tested...
+    QVector<QgsDataItem*> thisChildren = this->children();
+    QVector<QgsDataItem*> otherChildren = other->children();
+    for ( int i = 0; i < thisChildren.count(); i++ )
+    {
+      if ( !( thisChildren[i] )->equal( otherChildren[i] ) )
+        return false;
+    }
+  }
+  QgsDebugMsgLevel( "equal", 2 );
+  return true;
 }
 
 // ---------------------------------------------------------------------
@@ -519,7 +551,7 @@ QVector<QgsDataItem*> QgsDirectoryItem::createChildren( )
   return children;
 }
 
-bool QgsDirectoryItem::equal( const QgsDataItem *other )
+bool QgsDirectoryItem::equal( const QgsDataItem *other ) const
 {
   //QgsDebugMsg ( mPath + " x " + other->mPath );
   if ( type() != other->type() )

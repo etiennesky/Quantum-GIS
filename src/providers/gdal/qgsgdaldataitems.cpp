@@ -33,7 +33,7 @@ QgsGdalLayerItem::QgsGdalLayerItem( QgsDataItem* parent,
   // if there are sublayers, set populated=false so item can be populated on demand
   if ( theSublayers && theSublayers->size() > 0 )
   {
-    sublayers = *theSublayers;
+    mSublayers = *theSublayers;
     mPopulated = false;
   }
   else
@@ -82,13 +82,14 @@ QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
   QVector<QgsDataItem*> children;
 
   // get children from sublayers
-  if ( sublayers.count() > 0 )
+  // TODO use QgsDataSource
+  if ( mSublayers.count() > 0 )
   {
     QgsDataItem * childItem = NULL;
-    QgsDebugMsg( QString( "got %1 sublayers" ).arg( sublayers.count() ) );
-    for ( int i = 0; i < sublayers.count(); i++ )
+    QgsDebugMsg( QString( "got %1 sublayers" ).arg( mSublayers.count() ) );
+    for ( int i = 0; i < mSublayers.count(); i++ )
     {
-      QString name = sublayers[i];
+      QString name = mSublayers[i];
       // if netcdf/hdf use all text after filename
       // for hdf4 it would be best to get description, because the subdataset_index is not very practical
       if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
@@ -106,7 +107,7 @@ QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
       if ( name.endsWith( ":" ) ) name.chop( 1 );
       if ( name.endsWith( "\"" ) ) name.chop( 1 );
 
-      childItem = new QgsGdalLayerItem( this, name, sublayers[i], sublayers[i] );
+      childItem = new QgsGdalLayerItem( this, name, mSublayers[i], mSublayers[i] );
       if ( childItem )
         this->addChildItem( childItem );
     }

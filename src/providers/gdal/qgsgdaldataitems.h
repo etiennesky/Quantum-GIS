@@ -21,7 +21,7 @@ class QgsGdalLayerItem : public QgsLayerItem
 {
   private:
 
-    QStringList sublayers;
+    QStringList mSublayers;
 
   public:
     QgsGdalLayerItem( QgsDataItem* parent,
@@ -31,6 +31,8 @@ class QgsGdalLayerItem : public QgsLayerItem
 
     bool setCrs( QgsCoordinateReferenceSystem crs );
     Capability capabilities();
+
+    int realChildCount() const { return mSublayers.count(); }
 
     QVector<QgsDataItem*> createChildren();
 

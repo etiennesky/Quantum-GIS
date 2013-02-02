@@ -45,7 +45,7 @@ void QgsBrowserModel::addRootItems()
 
   QString home = QgsProject::instance()->homePath();
 
-  if( !home.isNull() )
+  if ( !home.isNull() )
   {
     item = new QgsDirectoryItem( NULL, tr( "Project home" ), home );
     mRootItems << item;
@@ -325,13 +325,13 @@ void QgsBrowserModel::refresh( const QModelIndex& theIndex )
 
 void QgsBrowserModel::beginInsertItems( QgsDataItem *parent, int first, int last )
 {
-  QgsDebugMsg( "parent mPath = " + parent->path() );
+  QgsDebugMsgLevel( "parent mPath = " + parent->path(), 2 );
   QModelIndex idx = findItem( parent );
   if ( !idx.isValid() )
     return;
-  QgsDebugMsg( "valid" );
+  QgsDebugMsgLevel( "valid", 2 );
   beginInsertRows( idx, first, last );
-  QgsDebugMsg( "end" );
+  QgsDebugMsgLevel( "end", 2 );
 }
 void QgsBrowserModel::endInsertItems()
 {
@@ -340,7 +340,7 @@ void QgsBrowserModel::endInsertItems()
 }
 void QgsBrowserModel::beginRemoveItems( QgsDataItem *parent, int first, int last )
 {
-  QgsDebugMsg( "parent mPath = " + parent->path() );
+  QgsDebugMsgLevel( "parent mPath = " + parent->path(), 2 );
   QModelIndex idx = findItem( parent );
   if ( !idx.isValid() )
     return;
@@ -348,7 +348,7 @@ void QgsBrowserModel::beginRemoveItems( QgsDataItem *parent, int first, int last
 }
 void QgsBrowserModel::endRemoveItems()
 {
-  QgsDebugMsg( "Entered" );
+  QgsDebugMsgLevel( "Entered", 2 );
   endRemoveRows();
 }
 void QgsBrowserModel::connectItem( QgsDataItem* item )

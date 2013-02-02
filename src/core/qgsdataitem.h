@@ -54,9 +54,12 @@ class CORE_EXPORT QgsDataItem : public QObject
     QgsDataItem( QgsDataItem::Type type, QgsDataItem* parent, QString name, QString path );
     virtual ~QgsDataItem();
 
-    bool hasChildren();
+    bool hasChildren() const;
 
-    int rowCount();
+    int rowCount() const;
+
+    // how many children can this item contain? (children are not added until requested)
+    virtual int realChildCount() const { return 0; }
 
     //
 
@@ -80,7 +83,9 @@ class CORE_EXPORT QgsDataItem : public QObject
     // returns pointer to the removed item or null if no such item was found
     virtual QgsDataItem * removeChildItem( QgsDataItem * child );
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
+
+    virtual bool lessThan( const QgsDataItem *other ) const;
 
     virtual QWidget * paramWidget() { return 0; }
 
@@ -173,7 +178,7 @@ class CORE_EXPORT QgsLayerItem : public QgsDataItem
 
     // --- reimplemented from QgsDataItem ---
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
 
     // --- New virtual methods for layer item derived classes ---
 
@@ -239,7 +244,7 @@ class CORE_EXPORT QgsDirectoryItem : public QgsDataCollectionItem
 
     QVector<QgsDataItem*> createChildren();
 
-    virtual bool equal( const QgsDataItem *other );
+    virtual bool equal( const QgsDataItem *other ) const;
 
     virtual QWidget * paramWidget();
 

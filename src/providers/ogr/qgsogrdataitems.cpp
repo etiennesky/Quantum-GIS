@@ -193,8 +193,8 @@ static QgsOgrLayerItem* dataItemForLayer( QgsDataItem* parentItem, QString name,
 
 // ----
 
-QgsOgrDataCollectionItem::QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path )
-    : QgsDataCollectionItem( parent, name, path )
+QgsOgrDataCollectionItem::QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, int numLayers )
+    : QgsDataCollectionItem( parent, name, path ), mNumLayers( numLayers )
 {
 }
 
@@ -391,7 +391,7 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
   else if ( numLayers > 1 )
   {
     QgsDebugMsgLevel( QString( "using name = %1" ).arg( name ), 2 );
-    item = new QgsOgrDataCollectionItem( parentItem, name, thePath );
+    item = new QgsOgrDataCollectionItem( parentItem, name, thePath, numLayers );
   }
 
   OGR_DS_Destroy( hDataSource );

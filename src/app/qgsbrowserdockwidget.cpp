@@ -452,6 +452,7 @@ void QgsBrowserDockWidget::addLayer( QgsLayerItem *layerItem )
     return;
 
   QString uri = layerItem->uri();
+  QgsDebugMsg( "uri= " + uri );
   if ( uri.isEmpty() )
     return;
 
@@ -465,7 +466,7 @@ void QgsBrowserDockWidget::addLayer( QgsLayerItem *layerItem )
   {
     QgisApp::instance()->addVectorLayer( uri, layerItem->layerName(), providerKey );
   }
-  if ( type == QgsMapLayer::RasterLayer )
+  else if ( type == QgsMapLayer::RasterLayer )
   {
     QgisApp::instance()->addRasterLayer( uri, layerItem->layerName(), providerKey );
   }

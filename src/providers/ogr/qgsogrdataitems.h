@@ -23,27 +23,30 @@ class QgsOgrLayerItem : public QgsLayerItem
 {
     Q_OBJECT
   public:
-    QgsOgrLayerItem( QgsDataItem* parent, QString name, QString path, QString uri, LayerType layerType );
+    QgsOgrLayerItem( QgsDataItem* parent, QString name, QString path,
+                     QString uri, LayerType layerType, QString layerName = QString() );
     ~QgsOgrLayerItem();
 
     bool setCrs( QgsCoordinateReferenceSystem crs );
     Capability capabilities();
-    QString layerName() const;
-    int realChildCount() const { return 0; }
+    QString layerName() const { return mLayerName; }
+
+  protected:
+    QString mLayerName;
 };
 
 class QgsOgrDataCollectionItem : public QgsDataCollectionItem
 {
     Q_OBJECT
   public:
-    QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, int numLayers );
+    QgsOgrDataCollectionItem( QgsDataItem* parent, QString name, QString path, QgsOgrDataSource* dataSource );
     ~QgsOgrDataCollectionItem();
 
-    int realChildCount() const { return mNumLayers; }
+    int realChildCount() const { return mDataSource->layerNames().count(); }
     QVector<QgsDataItem*> createChildren();
 
   protected:
-    int mNumLayers;
+    QgsOgrDataSource* mDataSource;
 };
 
 #endif // QGSOGRDATAITEMS_H

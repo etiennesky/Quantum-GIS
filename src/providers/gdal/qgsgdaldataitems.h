@@ -16,27 +16,34 @@
 #define QGSGDALDATAITEMS_H
 
 #include "qgsdataitem.h"
+#include "qgsgdalprovider.h"
 
 class QgsGdalLayerItem : public QgsLayerItem
 {
-  private:
-
-    QStringList mSublayers;
-
   public:
-    QgsGdalLayerItem( QgsDataItem* parent,
-                      QString name, QString path, QString uri,
-                      QStringList *theSublayers = NULL );
+    QgsGdalLayerItem( QgsDataItem* parent, QString name,
+                      QString path, QString uri, QString layerName = QString() );
     ~QgsGdalLayerItem();
 
     bool setCrs( QgsCoordinateReferenceSystem crs );
     Capability capabilities();
+    QString layerName() const { return mLayerName; }
 
-    int realChildCount() const { return mSublayers.count(); }
+  protected:
+    QString mLayerName;
+};
 
+class QgsGdalDataCollectionItem : public QgsDataCollectionItem
+{
+  public:
+    QgsGdalDataCollectionItem( QgsDataItem* parent, QString name, QString path, QgsGdalDataSource* dataSource );
+    ~QgsGdalDataCollectionItem();
+
+    int realChildCount() const { return mDataSource->layerNames().count(); }
     QVector<QgsDataItem*> createChildren();
 
-    QString layerName() const;
+  protected:
+    QgsGdalDataSource* mDataSource;
 };
 
 #endif // QGSGDALDATAITEMS_H

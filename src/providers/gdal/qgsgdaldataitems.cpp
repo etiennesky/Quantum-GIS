@@ -13,7 +13,7 @@
  *                                                                         *
  ***************************************************************************/
 #include "qgsgdaldataitems.h"
-#include "qgsgdalprovider.h"
+
 #include "qgslogger.h"
 
 #include <QFileInfo>
@@ -23,21 +23,20 @@
 void buildSupportedRasterFileFilterAndExtensions( QString & theFileFiltersString, QStringList & theExtensions, QStringList & theWildcards );
 
 
-QgsGdalLayerItem::QgsGdalLayerItem( QgsDataItem* parent,
-                                    QString name, QString path, QString uri,
-                                    QStringList *theSublayers )
-    : QgsLayerItem( parent, name, path, uri, QgsLayerItem::Raster, "gdal" )
+QgsGdalLayerItem::QgsGdalLayerItem( QgsDataItem* parent, QString name,
+                                    QString path, QString uri, QString layerName )
+    : QgsLayerItem( parent, name, path, uri, QgsLayerItem::Raster, "gdal" ), mLayerName( layerName )
 {
   mToolTip = uri;
-  // save sublayers for subsequent access
-  // if there are sublayers, set populated=false so item can be populated on demand
-  if ( theSublayers && theSublayers->size() > 0 )
+  mPopulated = true; // children are not expected
+  if ( layerName.isEmpty() )
   {
-    mSublayers = *theSublayers;
-    mPopulated = false;
+    QFileInfo info( name );
+    if ( info.suffix() == "gz" )
+      mLayerName = info.baseName();
+    else
+      mLayerName = info.completeBaseName();
   }
-  else
-    mPopulated = true;
 }
 
 QgsGdalLayerItem::~QgsGdalLayerItem()
@@ -76,53 +75,56 @@ bool QgsGdalLayerItem::setCrs( QgsCoordinateReferenceSystem crs )
   return true;
 }
 
-QVector<QgsDataItem*> QgsGdalLayerItem::createChildren( )
+// -------
+
+
+static QgsGdalLayerItem* dataItemForLayer( QgsDataItem* parentItem, QgsGdalDataSource* dataSource, const QString& layerName )
+{
+  QgsDataSourceLayer* dataLayer = dataSource->dataSourceLayer( layerName );
+  if ( ! dataLayer )
+    return 0;
+
+  return new QgsGdalLayerItem( parentItem, dataLayer->name, dataLayer->path, dataLayer->uri, dataLayer->layerName );
+}
+
+static QgsGdalLayerItem* dataItemForLayer( QgsDataItem* parentItem, QgsGdalDataSource* dataSource, int layerId )
+{
+  return dataItemForLayer( parentItem, dataSource, dataSource->layerNames().at( layerId ) );
+}
+
+// ----
+
+QgsGdalDataCollectionItem::QgsGdalDataCollectionItem( QgsDataItem* parent, QString name, QString path, QgsGdalDataSource* dataSource )
+    : QgsDataCollectionItem( parent, name, path ), mDataSource( dataSource )
+{
+  Q_ASSERT( mDataSource != 0 );
+  mIcon = QgsLayerItem::iconRaster(); // collection, but use raster icon
+  // if there are sublayers, set populated=false so item can be populated on demand
+  if ( dataSource && dataSource->layerNames().count() > 0 )
+  {
+    mPopulated = false;
+  }
+  else
+    mPopulated = true;
+}
+
+QgsGdalDataCollectionItem::~QgsGdalDataCollectionItem()
+{
+  delete mDataSource;
+}
+
+QVector<QgsDataItem*> QgsGdalDataCollectionItem::createChildren( )
 {
   QgsDebugMsg( "Entered, path=" + path() );
+
   QVector<QgsDataItem*> children;
-
-  // get children from sublayers
-  // TODO use QgsDataSource
-  if ( mSublayers.count() > 0 )
+  foreach ( QString layerName, mDataSource->layerNames() )
   {
-    QgsDataItem * childItem = NULL;
-    QgsDebugMsg( QString( "got %1 sublayers" ).arg( mSublayers.count() ) );
-    for ( int i = 0; i < mSublayers.count(); i++ )
-    {
-      QString name = mSublayers[i];
-      // if netcdf/hdf use all text after filename
-      // for hdf4 it would be best to get description, because the subdataset_index is not very practical
-      if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
-           name.startsWith( "hdf", Qt::CaseInsensitive ) )
-        name = name.mid( name.indexOf( mPath ) + mPath.length() + 1 );
-      else
-      {
-        // remove driver name and file name
-        name.replace( name.split( ":" )[0], "" );
-        name.replace( mPath, "" );
-      }
-      // remove any : or " left over
-      if ( name.startsWith( ":" ) ) name.remove( 0, 1 );
-      if ( name.startsWith( "\"" ) ) name.remove( 0, 1 );
-      if ( name.endsWith( ":" ) ) name.chop( 1 );
-      if ( name.endsWith( "\"" ) ) name.chop( 1 );
-
-      childItem = new QgsGdalLayerItem( this, name, mSublayers[i], mSublayers[i] );
-      if ( childItem )
-        this->addChildItem( childItem );
-    }
+    QgsGdalLayerItem* item = dataItemForLayer( this, mDataSource, layerName );
+    children.append( item );
   }
 
   return children;
-}
-
-QString QgsGdalLayerItem::layerName() const
-{
-  QFileInfo info( name() );
-  if ( info.suffix() == "gz" )
-    return info.baseName();
-  else
-    return info.completeBaseName();
 }
 
 // ---------------------------------------------------------------------------
@@ -250,35 +252,34 @@ QGISEXTERN QgsDataItem * dataItem( QString thePath, QgsDataItem* parentItem )
       CPLPopErrorHandler();
     }
     // add the item
-    QStringList sublayers;
     QgsDebugMsgLevel( QString( "adding item name=%1 thePath=%2" ).arg( name ).arg( thePath ), 2 );
-    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath, &sublayers );
+    QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath, name );
     if ( item )
       return item;
   }
 
-  // test that file is valid with GDAL
-  GDALAllRegister();
-  // do not print errors, but write to debug
-  CPLPushErrorHandler( CPLQuietErrorHandler );
-  CPLErrorReset();
-  GDALDatasetH hDS = GDALOpen( TO8F( thePath ), GA_ReadOnly );
-  CPLPopErrorHandler();
+  QgsDataItem* item = 0;
+  QgsGdalDataSource * dataSource = new QgsGdalDataSource( thePath );
 
-  if ( ! hDS )
+  if ( dataSource && dataSource->isValid() )
   {
-    QgsDebugMsg( QString( "GDALOpen error # %1 : %2 " ).arg( CPLGetLastErrorNo() ).arg( CPLGetLastErrorMsg() ) );
-    return 0;
+    if ( dataSource->layerUris().count() == 1 )
+    {
+      item = dataItemForLayer( parentItem, dataSource, 0 );
+      delete dataSource;
+    }
+    else if ( dataSource->layerUris().count() > 1 )
+    {
+      item = new QgsGdalDataCollectionItem( parentItem, name, thePath, dataSource );
+    }
+    else
+    {
+      QgsDebugMsg( "data source is valid but has no layers" );
+      delete dataSource;
+    }
   }
-
-  QStringList sublayers = QgsGdalProvider::subLayers( hDS );
-
-  GDALClose( hDS );
-
-  QgsDebugMsgLevel( "GdalDataset opened " + thePath, 2 );
-
-  QgsLayerItem * item = new QgsGdalLayerItem( parentItem, name, thePath, thePath,
-      &sublayers );
+  else if ( dataSource )
+    delete dataSource;
 
   return item;
 }

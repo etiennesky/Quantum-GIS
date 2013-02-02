@@ -22,6 +22,7 @@ email                : sherman at mrcc.com
 #include "qgsvectordataprovider.h"
 #include "qgsvectorfilewriter.h"
 #include "qgsvectorlayerimport.h"
+#include "qgsdataitem.h"
 
 class QgsField;
 class QgsVectorLayerImport;
@@ -66,7 +67,7 @@ class QgsOgrProvider : public QgsVectorDataProvider
      * Constructor of the vector provider
      * @param uri  uniform resource locator (URI) for a dataset
      */
-    QgsOgrProvider( QString const & uri = "" );
+    QgsOgrProvider( QString const & uri = "", bool openReadOnly = false );
 
     /**
      * Destructor
@@ -249,6 +250,9 @@ class QgsOgrProvider : public QgsVectorDataProvider
 
     /** return OGR geometry type */
     static int getOgrGeomType( OGRLayerH ogrLayer );
+
+    static QString getGeomName( OGRwkbGeometryType layerGeomType );
+    static QgsLayerItem::LayerType getGeomType( const QString& type );
 
     int layerIndex() const { return mLayerIndex; }
     QString layerName() const { return mLayerName; }

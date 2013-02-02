@@ -1097,6 +1097,51 @@ QStringList QgsGdalProvider::subLayers( GDALDatasetH dataset )
   return subLayers;
 }
 
+QString QgsGdalProvider::subLayerName( const QString& theSubLayer )
+{
+  QString name;
+
+  // typical sublayer string is NETCDF:"/data/tmp/file.nc":variable
+  // use all text after filename
+  // assume this syntax is the same for all drivers - need to test more
+  QStringList tokens = theSubLayer.split( ":" );
+  // detect windows-style filename NETCDF:"c:\temp\file.nc":variable
+  // TODO test!!!
+  if ( tokens.count() == 4 )
+  {
+    if ( tokens[1].size() == 1 )
+      tokens = QStringList() << tokens[0] << tokens[1] + ":" + tokens[2] << tokens[3];
+  }
+  if ( tokens.count() == 3 )
+  {
+    //name = name.mid( name.indexOf( thePath ) + thePath.length() + 1 );
+    name = tokens[2];
+    // remove any : or " left over
+    if ( name.startsWith( ":" ) ) name.remove( 0, 1 );
+    if ( name.startsWith( "\"" ) ) name.remove( 0, 1 );
+    if ( name.endsWith( ":" ) ) name.chop( 1 );
+    if ( name.endsWith( "\"" ) ) name.chop( 1 );
+  }
+  else
+  {
+    name = QFileInfo( theSubLayer ).completeBaseName();
+  }
+
+  // if netcdf/hdf use all text after filename
+  // for hdf4 it would be best to get description, because the subdataset_index is not very practical
+  // if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
+  //      name.startsWith( "hdf", Qt::CaseInsensitive ) )
+  // name = name.mid( name.indexOf( path ) + path.length() + 1 );
+  // else
+  // {
+  //   // remove driver name and file name
+  //   name.replace( name.split( ":" )[0], "" );
+  //   name.replace( path, "" );
+  // }
+
+  return name;
+}
+
 QStringList QgsGdalProvider::subLayerNames( GDALDatasetH theDataset, const QStringList& theSubLayers )
 {
   if ( theDataset == NULL || theSubLayers.isEmpty() )
@@ -1115,33 +1160,7 @@ QStringList QgsGdalProvider::subLayerNames( GDALDatasetH theDataset, const QStri
     // QgsDebugMsg("path= "+path);
     foreach ( QString name, theSubLayers )
     {
-      // QgsDebugMsg("name= "+name);
-
-      // typical sublayer string is NETCDF:"/data/tmp/file.nc":variable
-      // use all text after filename
-      // assume this syntax is the same for all drivers - need to test more
-      name = name.mid( name.indexOf( path ) + path.length() + 1 );
-      // remove any : or " left over
-      if ( name.startsWith( ":" ) ) name.remove( 0, 1 );
-      if ( name.startsWith( "\"" ) ) name.remove( 0, 1 );
-      if ( name.endsWith( ":" ) ) name.chop( 1 );
-      if ( name.endsWith( "\"" ) ) name.chop( 1 );
-
-      // if netcdf/hdf use all text after filename
-      // for hdf4 it would be best to get description, because the subdataset_index is not very practical
-      // if ( name.startsWith( "netcdf", Qt::CaseInsensitive ) ||
-      //      name.startsWith( "hdf", Qt::CaseInsensitive ) )
-      // name = name.mid( name.indexOf( path ) + path.length() + 1 );
-      // else
-      // {
-      //   // remove driver name and file name
-      //   name.replace( name.split( ":" )[0], "" );
-      //   name.replace( path, "" );
-      // }
-
-      // QgsDebugMsg("name= "+name);
-
-      mySubLayerNames << name;
+      mySubLayerNames << subLayerName( name );//, path );
     }
   }
 
@@ -2745,19 +2764,30 @@ QgsGdalDataSource::QgsGdalDataSource( QString baseUri )
       mLayerNames = provider->subLayerNames();
 
     // if provider is valid, add "main" layer
+    QString name = QFileInfo( baseUri ).fileName();
+    QString layerName = QFileInfo( baseUri ).completeBaseName();
     if ( provider->isValid() )
     {
       layerUris.prepend( baseUri );
-      mLayerNames.prepend( QFileInfo( baseUri ).completeBaseName() );
+      if ( mLayerNames.isEmpty() )
+        layerName = QgsGdalProvider::subLayerName( baseUri );
+      mLayerNames.prepend( layerName );
     }
 
     QgsDebugMsg( QString( "uris:%1 names:%2" ).arg( layerUris.count() ).arg( mLayerNames.count() ) );
+    QgsDebugMsgLevel( QString( "uris:%1 names:%2" ).arg( layerUris.join( " " ) ).arg( mLayerNames.join( " " ) ), 2 );
 
     // fill mLayers
     for ( int i = 0; i < mLayerNames.count(); i++ )
     {
-      mLayers[ mLayerNames[i] ] = QgsDataSourceLayer( mLayerNames[i], mLayerNames[i], layerUris[i],
-                                  QgsMapLayer::RasterLayer, mProviderKey, QString( "%1:%2" ).arg( i ).arg( mLayerNames[i] ) );
+      if ( mLayerNames.count() > 1 )
+      {
+        name = mLayerNames[i];
+        layerName = mLayerNames[i];
+      }
+      mLayers[ mLayerNames[i] ] =
+        new QgsDataSourceLayer( name, layerName, layerUris[i], layerUris[i],
+                                QgsMapLayer::RasterLayer, mProviderKey, QString( "%1:%2" ).arg( i ).arg( mLayerNames[i] ) );
     }
 
     mValid = ! mLayerNames.isEmpty();

@@ -3512,8 +3512,11 @@ bool QgisApp::openLayer( const QString & fileName, bool allowInteractive )
   // this in QgsDataSource now
 
   // try using new QgsDataSource using all available providers
-  if ( QgsSublayersDialog::addDataSourceLayers( this, fileName ).count() >= 0 )
-  { // do nothing, layers were added
+  int count = QgsSublayersDialog::addDataSourceLayers( this, fileName ).count();
+  if ( count > 0 )
+  {
+    // layers were added, continue
+    QgsDebugMsg( QString( "got %1 layers from QgsSublayersDialog::addDataSourceLayers() using uri %2" ).arg( count ).arg( fileName ) );
     ok = true;
   }
 
@@ -6132,9 +6135,12 @@ QgsVectorLayer* QgisApp::addVectorLayer( QString vectorLayerPath, QString baseNa
   QgsVectorLayer *layer = 0;
 
   // try using new QgsDataSource/QgsSublayersDialog
-  if ( QgsSublayersDialog::addDataSourceLayers( this, vectorLayerPath, QgsMapLayer::VectorLayer,
-       QStringList( providerKey ) ).count() >= 0 )
-  { // do nothing, layers were added
+  int count = QgsSublayersDialog::addDataSourceLayers( this, vectorLayerPath, QgsMapLayer::VectorLayer,
+              QStringList( providerKey ) ).count();
+  if ( count > 0 )
+  {
+    // layers were added, continue
+    QgsDebugMsg( QString( "got %1 layers from QgsSublayersDialog::addDataSourceLayers() using uri %2" ).arg( count ).arg( vectorLayerPath ) );
   }
   else
   {
@@ -7738,12 +7744,17 @@ QgsRasterLayer* QgisApp::addRasterLayerPrivate(
   bool ok = false;
   QgsError error;
   QString title;
+  int count = 0;
 
   // try using new QgsDataSource
-  if ( QgsSublayersDialog::addDataSourceLayers( this, uri, QgsMapLayer::RasterLayer,
-       QStringList( providerKey ) ).count() >= 0 )
+  count = QgsSublayersDialog::addDataSourceLayers( this, uri, QgsMapLayer::RasterLayer,
+          QStringList( providerKey ) ).count();
+  if ( count > 0 )
 
-  { // do nothing, layers were added
+  {
+    // layers were added, continue
+    QgsDebugMsg( QString( "got %1 layers from QgsSublayersDialog::addDataSourceLayers() using uri %2" ).arg( count ).arg( uri ) );
+    ok = true;
   }
   // fallback to QgsRasterLayer
   else
@@ -7763,6 +7774,7 @@ QgsRasterLayer* QgisApp::addRasterLayerPrivate(
 
     if ( !layer->isValid() )
     {
+      ok = false;
       error = layer->error();
       title = tr( "Invalid Layer" );
     }
@@ -7791,8 +7803,6 @@ QgsRasterLayer* QgisApp::addRasterLayerPrivate(
 
     if ( layer )
     {
-      // TODO fix this - provider is not deleted in ~QgsRasterLayer()
-      delete layer->dataProvider();
       delete layer;
       layer = NULL;
     }

@@ -151,8 +151,19 @@ int QgsSublayersDialog::exec()
     return QDialog::Accepted;
   }
 
-
-  return QDialog::exec();
+  // if we got here, disable override cursor, open dialog and return result
+  // TODO add override cursor where it is missing (e.g. when opening via "Add Raster")
+  QCursor cursor;
+  bool override = ( QApplication::overrideCursor() != 0 ); 
+  if ( override )
+  {
+    cursor = QCursor( * QApplication::overrideCursor() );
+    QApplication::restoreOverrideCursor();
+  }
+  int ret = QDialog::exec();
+  if ( override )
+    QApplication::setOverrideCursor( cursor );
+  return ret;
 }
 
 QList<QgsMapLayer *> QgsSublayersDialog::addDataSourceLayers( QWidget* parentWidget, QString baseUri,

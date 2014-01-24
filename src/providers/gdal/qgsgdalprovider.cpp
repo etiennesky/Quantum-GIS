@@ -1308,10 +1308,12 @@ QgsRasterHistogram QgsGdalProvider::histogram( int theBandNo,
   // unapply scale anf offset for min and max
   double myScale = bandScale( theBandNo );
   double myOffset = bandOffset( theBandNo );
+  double myMinVal = myHistogram.minimum;
+  double myMaxVal = myHistogram.maximum;
   if ( myScale != 1.0 || myOffset != 0. )
   {
-    double myMinVal = (myHistogram.minimum - myOffset) / myScale;
-    double myMaxVal = (myHistogram.maximum - myOffset) / myScale;
+    myMinVal = (myHistogram.minimum - myOffset) / myScale;
+    myMaxVal = (myHistogram.maximum - myOffset) / myScale;
   }
 
   double dfHalfBucket = ( myMaxVal - myMinVal ) / ( 2 * myHistogram.binCount );
